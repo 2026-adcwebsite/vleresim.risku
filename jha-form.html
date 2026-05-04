@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>JHA — Vlerësimi i Riskut</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--red:#e2001a;--red-light:#fff0f0;--green:#1D9E75;--green-light:#f0faf5;--border:#e0e0e0;--text:#1a1a1a;--muted:#666;--bg:#f0f2f5}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:0 0 90px}
+.header{background:#fff;padding:12px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.logo{font-size:20px;font-weight:800;color:var(--red)}
+.user-info{display:flex;align-items:center;gap:8px}
+.user-name{font-size:13px;font-weight:600}
+.btn-logout{font-size:12px;color:var(--muted);cursor:pointer;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:#fff}
+.steps{display:flex;gap:4px}
+.step{flex:1;height:4px;border-radius:2px;background:var(--border);transition:background 0.3s}
+.step.done{background:var(--green)}.step.active{background:var(--red)}
+.page{display:none;padding:16px}.page.active{display:block}
+.page-num{font-size:11px;font-weight:600;color:var(--red);text-transform:uppercase;letter-spacing:1px}
+.page-title{font-size:18px;font-weight:700;margin-top:2px;margin-bottom:16px}
+.card{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;border:1px solid var(--border)}
+.field{margin-bottom:14px}.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;color:var(--text);background:#fff;outline:none;transition:border-color 0.15s;-webkit-appearance:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--red)}
+.field textarea{min-height:80px;resize:vertical;line-height:1.5}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+.readonly-field{padding:11px 13px;background:#f9f9f9;border:1.5px solid var(--border);border-radius:8px;font-size:15px;color:var(--muted)}
+.risk-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.risk-card{background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.risk-card.sel{border-color:var(--red);background:var(--red-light)}
+.risk-card .ic{font-size:22px;margin-bottom:6px}
+.risk-card .lb{font-size:13px;font-weight:600;line-height:1.3}
+.risk-card .sb{font-size:11px;color:var(--muted);margin-top:2px}
+.risk-card.sel .lb{color:var(--red)}
+.chk{background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px}
+.chk.yes{border-color:var(--green);background:var(--green-light)}
+.chk.no{border-color:var(--red);background:var(--red-light)}
+.chk-q{font-size:13px;line-height:1.4;margin-bottom:10px}
+.chk-btns{display:flex;gap:6px}
+.chk-btn{flex:1;padding:8px;border-radius:7px;font-size:13px;font-weight:600;border:1.5px solid var(--border);background:#f5f5f5;color:var(--muted);cursor:pointer}
+.chk-btn.apo{background:var(--green);border-color:var(--green);color:#fff}
+.chk-btn.ajo{background:var(--red);border-color:var(--red);color:#fff}
+.chk-btn.ana{background:#888;border-color:#888;color:#fff}
+.ppe-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ppe-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid var(--border);border-radius:9px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ppe-item.chked{border-color:var(--green);background:var(--green-light)}
+.ppe-box{width:18px;height:18px;border-radius:4px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ppe-item.chked .ppe-box{background:var(--green);border-color:var(--green)}
+.ppe-tick{color:#fff;font-size:11px;font-weight:700;display:none}
+.ppe-item.chked .ppe-tick{display:block}
+.ppe-lbl{font-size:13px;font-weight:500}
+.photo-zone{border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.thumb{position:relative;width:80px;height:80px}
+.thumb img{width:100%;height:100%;object-fit:cover;border-radius:8px}
+.thumb-del{position:absolute;top:-6px;right:-6px;width:20px;height:20px;background:var(--red);color:#fff;border-radius:50%;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700}
+.sig-cv{border:1.5px solid var(--border);border-radius:10px;width:100%;touch-action:none;background:#fafafa;display:block}
+.nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:8px;max-width:480px;margin:0 auto}
+.btn-back{flex:1;padding:13px;border-radius:10px;font-size:15px;font-weight:600;border:1.5px solid var(--border);background:#fff;cursor:pointer}
+.btn-next{flex:2;padding:13px;border-radius:10px;font-size:15px;font-weight:700;border:none;background:var(--red);color:#fff;cursor:pointer}
+.btn-next:disabled{background:#ccc;cursor:not-allowed}
+.success{text-align:center;padding:48px 20px}
+.s-icon{font-size:64px;margin-bottom:16px}
+.s-title{font-size:22px;font-weight:700;color:var(--green)}
+.s-text{font-size:14px;color:var(--muted);margin-top:8px;line-height:1.5}
+.s-id{font-size:12px;color:#999;margin-top:16px;font-family:monospace;background:#f5f5f5;padding:8px 12px;border-radius:6px;display:inline-block}
+.btn-new{margin-top:24px;padding:14px 32px;border-radius:10px;font-size:15px;font-weight:700;border:none;background:var(--red);color:#fff;cursor:pointer;width:100%}
+.loading-scr{position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:999}
+.spin{width:28px;height:28px;border:3px solid #f0f0f0;border-top-color:var(--red);border-radius:50%;animation:sp 0.8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.sec-lbl{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div class="loading-scr" id="lscr"><div class="spin"></div><div style="font-size:14px;color:var(--muted)">Duke kontrolluar hyrjen...</div></div>
+<div class="app" id="mapp" style="display:none">
+  <div class="header">
+    <div class="header-row">
+      <div class="logo">ADC · JHA</div>
+      <div class="user-info">
+        <div class="user-name" id="uname">—</div>
+        <button class="btn-logout" onclick="doLogout()">Dil</button>
+      </div>
+    </div>
+    <div class="steps">
+      <div class="step active" id="s0"></div><div class="step" id="s1"></div>
+      <div class="step" id="s2"></div><div class="step" id="s3"></div>
+    </div>
+  </div>
+
+  <div class="page active" id="page0">
+    <div class="page-num">Hapi 1 nga 4</div>
+    <div class="page-title">Informacion i Përgjithshëm</div>
+    <div class="card">
+      <div class="field"><label>Punonjësi</label><div class="readonly-field" id="disp-emri">—</div></div>
+      <div class="field"><label>Data</label><input type="date" id="data"></div>
+      <div class="field"><label>Nr. Ticket / Urdhër Pune</label><input type="text" id="ticket" placeholder="p.sh. TKT-2025-0123"></div>
+    </div>
+    <div class="card">
+      <div class="field"><label>Vendndodhja / Adresa</label><input type="text" id="adresa" placeholder="Rruga, Qyteti"></div>
+      <div class="field"><label>Lloji i Punës</label>
+        <select id="lloji">
+          <option value="">— Zgjidh llojin —</option>
+          <option>Instalim fibra optike</option><option>Mirëmbajtje / Riparim</option>
+          <option>Instalim në shtyllë</option><option>Punë në kanal nëntokësor</option>
+          <option>Aktivizim lidhje klienti</option><option>Punë në lartësi (kullë/çati)</option>
+          <option>Tjetër</option>
+        </select>
+      </div>
+      <div class="field"><label>Supervisor / Mbikëqyrës</label><input type="text" id="supervisor" placeholder="Emri i Mbikëqyrësit"></div>
+    </div>
+  </div>
+
+  <div class="page" id="page1">
+    <div class="page-num">Hapi 2 nga 4</div>
+    <div class="page-title">Rreziqet e Pranishme</div>
+    <div class="card">
+      <div class="sec-lbl">Zgjidh të gjitha rreziqet aktive</div>
+      <div class="risk-grid">
+        <div class="risk-card" onclick="tRisk(this,'lartesia')"><div class="ic">⚠️</div><div class="lb">Punë në Lartësi</div><div class="sb">Kullë, shkallë, çati</div></div>
+        <div class="risk-card" onclick="tRisk(this,'elektrike')"><div class="ic">⚡</div><div class="lb">Rrezik Elektrik</div><div class="sb">Kontakt me rrjetin</div></div>
+        <div class="risk-card" onclick="tRisk(this,'renie_obj')"><div class="ic">🏗️</div><div class="lb">Rënie Objektesh</div><div class="sb">Materiale nga lartësia</div></div>
+        <div class="risk-card" onclick="tRisk(this,'zjar')"><div class="ic">🔥</div><div class="lb">Zjarr</div><div class="sb">Materiale të ndezshme</div></div>
+        <div class="risk-card" onclick="tRisk(this,'pesash')"><div class="ic">💪</div><div class="lb">Ngritje Pesash</div><div class="sb">Mbi 25 kg</div></div>
+        <div class="risk-card" onclick="tRisk(this,'trafiku')"><div class="ic">🚗</div><div class="lb">Trafik Rrugor</div><div class="sb">Punë pranë rrugës</div></div>
+        <div class="risk-card" onclick="tRisk(this,'hapesira')"><div class="ic">🕳️</div><div class="lb">Hapësira të Kufizuara</div><div class="sb">Kanal, tunel</div></div>
+        <div class="risk-card" onclick="tRisk(this,'kimike')"><div class="ic">⚗️</div><div class="lb">Substanca Kimike</div><div class="sb">Tretës, acide</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="page2">
+    <div class="page-num">Hapi 3 nga 4</div>
+    <div class="page-title">Kontrollet e Sigurisë</div>
+    <div id="chks-wrap"></div>
+    <div class="card"><div class="sec-lbl">Vërejtje / Masa Shtesë</div>
+      <div class="field"><textarea id="verejte" placeholder="Çdo rrezik shtesë ose masë sigurie..."></textarea></div>
+    </div>
+  </div>
+
+  <div class="page" id="page3">
+    <div class="page-num">Hapi 4 nga 4</div>
+    <div class="page-title">PMI, Foto & Nënshkrim</div>
+    <div class="card"><div class="sec-lbl">Paisjet Mbrojtëse (PMI)</div><div class="ppe-grid" id="ppe-grid"></div></div>
+    <div class="card">
+      <div class="sec-lbl">Foto nga Terreni</div>
+      <input type="file" id="photoInput" accept="image/*" multiple style="display:none" onchange="handlePhotos(this)">
+      <div class="photo-zone" onclick="document.getElementById('photoInput').click()">
+        <div style="font-size:32px;margin-bottom:8px">📷</div>
+        <div style="font-size:14px;font-weight:600">Shtyp për të shtuar foto</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Mund të zgjedhësh disa njëherësh</div>
+      </div>
+      <div class="thumbs" id="thumbs"></div>
+    </div>
+    <div class="card">
+      <div class="sec-lbl">Nënshkrim Dixhital</div>
+      <canvas id="sigCv" class="sig-cv" height="120"></canvas>
+      <div style="display:flex;justify-content:flex-end;margin-top:8px">
+        <button onclick="clearSig()" style="font-size:13px;color:var(--muted);cursor:pointer;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:#fff">Fshij</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="pageOK">
+    <div class="success">
+      <div class="s-icon">✅</div>
+      <div class="s-title">Forma u Dërgua!</div>
+      <div class="s-text">Vlerësimi JHA u ruajt me sukses.<br>Supervisor-i do ta shohë menjëherë.</div>
+      <div class="s-id" id="s-ref"></div>
+      <button class="btn-new" onclick="resetForm()">+ Formë e Re</button>
+    </div>
+  </div>
+</div>
+
+<div class="nav" id="nav-bar" style="display:none">
+  <button class="btn-back" id="btn-back" onclick="prevPage()" style="display:none">← Prapa</button>
+  <button class="btn-next" id="btn-next" onclick="nextPage()">Vazhdo →</button>
+</div>
+
+<script>
+const SURL='https://klvxppajwtwxxeomvefe.supabase.co';
+const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsdnhwcGFqd3R3eHhlb212ZWZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4OTM0NTgsImV4cCI6MjA5MzQ2OTQ1OH0.QApeuRya7HiOT494qljVIKTv7XX_HSeS61tAwijbOlk';
+const {createClient}=supabase;
+const sb=createClient(SURL,SKEY);
+
+let cu=null,prof=null,cp=0,risks=[],photos=[],chks={};
+
+const Qs=[
+  {id:'q1',t:'Ka personel të mjaftueshëm (minimum 2 punonjës)?',na:false},
+  {id:'q2',t:'Pajisjet janë të certifikuara dhe në gjendje të mirë?',na:false},
+  {id:'q3',t:'Personeli është trajnuar dhe ka certifikata?',na:false},
+  {id:'q4',t:'Paisjet PMI janë OK (kasko, kapuce, doreza, etj.)?',na:false},
+  {id:'q5',t:'Ka detektor gazi (O₂/H₂S/CO) gjatë punës në hapësira?',na:true},
+  {id:'q6',t:'Zona e emergjencës dhe rrugët e daljes janë identifikuar?',na:false},
+  {id:'q7',t:'Procedurat për emergjencat janë identifikuar?',na:false},
+  {id:'q8',t:'Shkallët/lidhjet janë siguruar dhe pajisjet vendosur stabël?',na:false},
+  {id:'q9',t:'Distanca nga linja elektrike mbi 2m është verifikuar?',na:true},
+];
+const PPE=['Kapuce / Helmet','Këpucë sigurie','Doreza','Rroba pune','Syze sigurie','Maskë gazi','Jelek fosforishëm','Rrip sigurie / Arnés','Mbrojtëse dëgjimi'];
+
+sb.auth.getSession().then(async({data:{session}})=>{
+  if(!session){window.location.href='login.html';return;}
+  cu=session.user;
+  const {data:p}=await sb.from('profiles').select('*').eq('id',cu.id).single();
+  prof=p;
+  if(p?.role==='supervisor'){window.location.href='jha-dashboard.html';return;}
+  const nm=p?.full_name||cu.email;
+  document.getElementById('uname').textContent=nm;
+  document.getElementById('disp-emri').textContent=nm;
+  document.getElementById('lscr').style.display='none';
+  document.getElementById('mapp').style.display='block';
+  document.getElementById('nav-bar').style.display='flex';
+  document.getElementById('data').valueAsDate=new Date();
+  initChks();initPPE();initSig();updateNav();
+});
+
+async function doLogout(){await sb.auth.signOut();window.location.href='login.html';}
+
+function initChks(){
+  document.getElementById('chks-wrap').innerHTML=Qs.map(q=>`
+    <div class="chk" id="ci_${q.id}">
+      <div class="chk-q">${q.t}</div>
+      <div class="chk-btns">
+        <button class="chk-btn" onclick="sChk('${q.id}','po',this)">✓ Po</button>
+        <button class="chk-btn" onclick="sChk('${q.id}','jo',this)">✗ Jo</button>
+        ${q.na?`<button class="chk-btn" onclick="sChk('${q.id}','na',this)">N/A</button>`:''}
+      </div>
+    </div>`).join('');
+}
+function sChk(id,v,btn){
+  const it=document.getElementById('ci_'+id);
+  it.querySelectorAll('.chk-btn').forEach(b=>b.classList.remove('apo','ajo','ana'));
+  it.classList.remove('yes','no');chks[id]=v;
+  if(v==='po'){btn.classList.add('apo');it.classList.add('yes');}
+  else if(v==='jo'){btn.classList.add('ajo');it.classList.add('no');}
+  else btn.classList.add('ana');
+}
+function initPPE(){
+  document.getElementById('ppe-grid').innerHTML=PPE.map((p,i)=>`
+    <div class="ppe-item" id="pp${i}" onclick="tPpe(${i})">
+      <div class="ppe-box"><span class="ppe-tick">✓</span></div>
+      <div class="ppe-lbl">${p}</div>
+    </div>`).join('');
+}
+function tPpe(i){document.getElementById('pp'+i).classList.toggle('chked');}
+function tRisk(c,id){c.classList.toggle('sel');risks.includes(id)?risks=risks.filter(r=>r!==id):risks.push(id);}
+
+function updateNav(){
+  document.getElementById('btn-back').style.display=cp>0?'block':'none';
+  const bn=document.getElementById('btn-next');
+  if(cp===3){bn.textContent='✓ Dërgo JHA';bn.style.background='#1D9E75';}
+  else{bn.textContent='Vazhdo →';bn.style.background='';}
+  document.querySelectorAll('.step').forEach((s,i)=>{s.className='step';if(i<cp)s.classList.add('done');else if(i===cp)s.classList.add('active');});
+}
+function showPage(n){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(n>=4?'pageOK':'page'+n).classList.add('active');
+  document.getElementById('nav-bar').style.display=n>=4?'none':'flex';
+  window.scrollTo(0,0);
+}
+function prevPage(){if(cp>0){cp--;showPage(cp);updateNav();}}
+function nextPage(){if(cp===3){submitForm();return;}cp++;showPage(cp);updateNav();}
+
+function handlePhotos(inp){
+  Array.from(inp.files).forEach(f=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      photos.push(e.target.result);
+      const idx=photos.length-1;
+      const d=document.createElement('div');d.className='thumb';
+      d.innerHTML=`<img src="${e.target.result}"><div class="thumb-del" onclick="rmPhoto(${idx},this)">×</div>`;
+      document.getElementById('thumbs').appendChild(d);
+    };r.readAsDataURL(f);
+  });
+}
+function rmPhoto(idx,btn){photos[idx]=null;btn.closest('.thumb').remove();}
+
+function initSig(){
+  const cv=document.getElementById('sigCv'),ctx=cv.getContext('2d');let dr=false;
+  function gp(e){const r=cv.getBoundingClientRect(),sx=cv.width/r.width,sy=cv.height/r.height;return e.touches?{x:(e.touches[0].clientX-r.left)*sx,y:(e.touches[0].clientY-r.top)*sy}:{x:(e.clientX-r.left)*sx,y:(e.clientY-r.top)*sy};}
+  cv.addEventListener('mousedown',e=>{dr=true;const p=gp(e);ctx.beginPath();ctx.moveTo(p.x,p.y);});
+  cv.addEventListener('mousemove',e=>{if(!dr)return;const p=gp(e);ctx.lineTo(p.x,p.y);ctx.strokeStyle='#e2001a';ctx.lineWidth=2;ctx.lineCap='round';ctx.stroke();});
+  cv.addEventListener('mouseup',()=>dr=false);
+  cv.addEventListener('touchstart',e=>{e.preventDefault();dr=true;const p=gp(e);ctx.beginPath();ctx.moveTo(p.x,p.y);},{passive:false});
+  cv.addEventListener('touchmove',e=>{e.preventDefault();if(!dr)return;const p=gp(e);ctx.lineTo(p.x,p.y);ctx.strokeStyle='#e2001a';ctx.lineWidth=2;ctx.lineCap='round';ctx.stroke();},{passive:false});
+  cv.addEventListener('touchend',()=>dr=false);
+}
+function clearSig(){const c=document.getElementById('sigCv');c.getContext('2d').clearRect(0,0,c.width,c.height);}
+
+async function submitForm(){
+  const bn=document.getElementById('btn-next');bn.disabled=true;bn.textContent='Duke dërguar...';
+  const pmi=PPE.filter((_,i)=>document.getElementById('pp'+i)?.classList.contains('chked'));
+  const {data:{session}}=await sb.auth.getSession();
+  const payload={
+    user_id:cu.id,user_email:cu.email,user_fullname:prof?.full_name||cu.email,
+    data:new Date().toISOString(),emri:prof?.full_name||cu.email,
+    ticket:document.getElementById('ticket').value,
+    adresa:document.getElementById('adresa').value,
+    lloji:document.getElementById('lloji').value,
+    supervisor:document.getElementById('supervisor').value,
+    rreziqet:risks,kontrollet:chks,pmi,
+    verejte:document.getElementById('verejte').value,
+    signature:document.getElementById('sigCv').toDataURL(),
+    foto_urls:photos.filter(Boolean)
+  };
+  try{
+    const res=await fetch(`${SURL}/rest/v1/jha_submissions`,{
+      method:'POST',
+      headers:{'apikey':SKEY,'Authorization':'Bearer '+session.access_token,'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify(payload)
+    });
+    const d=await res.json();
+    if(res.ok&&d[0]){document.getElementById('s-ref').textContent='ID: '+d[0].id.substring(0,8).toUpperCase();cp=4;showPage(4);}
+    else{alert('Gabim gjatë dërgimit.');bn.disabled=false;bn.textContent='✓ Dërgo JHA';bn.style.background='#1D9E75';}
+  }catch{alert('Gabim lidhje.');bn.disabled=false;bn.textContent='✓ Dërgo JHA';bn.style.background='#1D9E75';}
+}
+
+function resetForm(){
+  cp=0;risks=[];photos=[];chks={};
+  ['ticket','adresa','verejte'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('lloji').value='';
+  document.getElementById('supervisor').value='';
+  document.getElementById('thumbs').innerHTML='';
+  document.querySelectorAll('.risk-card').forEach(c=>c.classList.remove('sel'));
+  clearSig();initChks();initPPE();
+  document.getElementById('data').valueAsDate=new Date();
+  showPage(0);updateNav();
+  const bn=document.getElementById('btn-next');bn.disabled=false;bn.textContent='Vazhdo →';bn.style.background='';
+}
+</script>
+</body>
+</html>

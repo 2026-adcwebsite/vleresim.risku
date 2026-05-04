@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>JHA — Hyrje</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--red:#e2001a;--border:#e0e0e0;--text:#1a1a1a;--muted:#666;--bg:#f0f2f5;--green:#1D9E75}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.wrap{width:100%;max-width:400px}
+.logo-area{text-align:center;margin-bottom:32px}
+.logo{font-size:36px;font-weight:800;color:var(--red);letter-spacing:-1px}
+.logo-sub{font-size:14px;color:var(--muted);margin-top:4px}
+.card{background:#fff;border-radius:16px;padding:28px;border:1px solid var(--border)}
+.card-title{font-size:20px;font-weight:700;margin-bottom:6px}
+.card-sub{font-size:14px;color:var(--muted);margin-bottom:24px}
+.tabs{display:flex;gap:0;margin-bottom:24px;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.tab{flex:1;padding:10px;text-align:center;font-size:14px;font-weight:600;cursor:pointer;background:#fff;color:var(--muted);border:none;transition:all 0.15s}
+.tab.active{background:var(--red);color:#fff}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.field input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:15px;color:var(--text);outline:none;transition:border-color 0.15s}
+.field input:focus{border-color:var(--red)}
+.btn{width:100%;padding:14px;border-radius:10px;font-size:15px;font-weight:700;border:none;background:var(--red);color:#fff;cursor:pointer;transition:opacity 0.15s;margin-top:4px}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.btn-green{background:var(--green)}
+.err{background:#fff0f0;border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;font-size:13px;color:#dc2626;margin-bottom:16px;display:none}
+.err.show{display:block}
+.ok{background:#f0faf5;border:1px solid #6ee7b7;border-radius:8px;padding:10px 14px;font-size:13px;color:var(--green);margin-bottom:16px;display:none}
+.ok.show{display:block}
+.divider{text-align:center;font-size:12px;color:var(--muted);margin:16px 0;position:relative}
+.divider::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:var(--border)}
+.divider span{background:#fff;padding:0 10px;position:relative}
+.role-info{background:#f8f8f8;border-radius:8px;padding:12px;font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo-area">
+    <div class="logo">ADC</div>
+    <div class="logo-sub">Sistemi i Vlerësimit të Riskut JHA</div>
+  </div>
+
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('login')">Hyrje</button>
+      <button class="tab" onclick="switchTab('register')">Regjistrim</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="tab-login">
+      <div class="err" id="login-err"></div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="l-email" placeholder="emri@adcgroup.al">
+      </div>
+      <div class="field">
+        <label>Fjalëkalimi</label>
+        <input type="password" id="l-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn" id="btn-login" onclick="doLogin()">Hyr në Sistem</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="tab-register" style="display:none">
+      <div class="role-info">
+        ℹ️ Regjistrimi është vetëm për punonjës të rinj. Supervisor-ët regjistrohen nga administratori.
+      </div>
+      <div class="err" id="reg-err"></div>
+      <div class="ok" id="reg-ok"></div>
+      <div class="field">
+        <label>Emri i Plotë</label>
+        <input type="text" id="r-name" placeholder="Emri Mbiemri">
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="r-email" placeholder="emri@adcgroup.al">
+      </div>
+      <div class="field">
+        <label>Fjalëkalimi</label>
+        <input type="password" id="r-pass" placeholder="Minimum 8 karaktere">
+      </div>
+      <div class="field">
+        <label>Konfirmo Fjalëkalimin</label>
+        <input type="password" id="r-pass2" placeholder="Rifut fjalëkalimin" onkeydown="if(event.key==='Enter')doRegister()">
+      </div>
+      <button class="btn btn-green" id="btn-reg" onclick="doRegister()">Krijo Llogari</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const { createClient } = supabase;
+const sb = createClient(
+  'https://klvxppajwtwxxeomvefe.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsdnhwcGFqd3R3eHhlb212ZWZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4OTM0NTgsImV4cCI6MjA5MzQ2OTQ1OH0.QApeuRya7HiOT494qljVIKTv7XX_HSeS61tAwijbOlk'
+);
+
+// Check if already logged in
+sb.auth.getSession().then(({data:{session}})=>{
+  if(session) redirectUser(session.user);
+});
+
+function switchTab(t){
+  document.getElementById('tab-login').style.display = t==='login'?'block':'none';
+  document.getElementById('tab-register').style.display = t==='register'?'block':'none';
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',(t==='login'&&i===0)||(t==='register'&&i===1)));
+}
+
+async function redirectUser(user){
+  // Get profile role
+  const {data} = await sb.from('profiles').select('role').eq('id',user.id).single();
+  const role = data?.role || 'worker';
+  if(role==='supervisor'){
+    window.location.href='jha-dashboard.html';
+  } else {
+    window.location.href='jha-form.html';
+  }
+}
+
+async function doLogin(){
+  const email = document.getElementById('l-email').value.trim();
+  const pass = document.getElementById('l-pass').value;
+  const err = document.getElementById('login-err');
+  const btn = document.getElementById('btn-login');
+  err.classList.remove('show');
+  if(!email||!pass){err.textContent='Plotëso të gjitha fushat.';err.classList.add('show');return;}
+  btn.disabled=true;btn.textContent='Duke hyrë...';
+  const {data,error} = await sb.auth.signInWithPassword({email,password:pass});
+  if(error){
+    err.textContent = error.message.includes('Invalid')?'Email ose fjalëkalim i gabuar.':error.message;
+    err.classList.add('show');
+    btn.disabled=false;btn.textContent='Hyr në Sistem';
+    return;
+  }
+  redirectUser(data.user);
+}
+
+async function doRegister(){
+  const name = document.getElementById('r-name').value.trim();
+  const email = document.getElementById('r-email').value.trim();
+  const pass = document.getElementById('r-pass').value;
+  const pass2 = document.getElementById('r-pass2').value;
+  const err = document.getElementById('reg-err');
+  const ok = document.getElementById('reg-ok');
+  const btn = document.getElementById('btn-reg');
+  err.classList.remove('show');ok.classList.remove('show');
+  if(!name||!email||!pass){err.textContent='Plotëso të gjitha fushat.';err.classList.add('show');return;}
+  if(pass.length<8){err.textContent='Fjalëkalimi duhet të ketë minimum 8 karaktere.';err.classList.add('show');return;}
+  if(pass!==pass2){err.textContent='Fjalëkalimet nuk përputhen.';err.classList.add('show');return;}
+  btn.disabled=true;btn.textContent='Duke krijuar...';
+  const {data,error} = await sb.auth.signUp({
+    email, password:pass,
+    options:{data:{full_name:name, role:'worker'}}
+  });
+  if(error){
+    err.textContent=error.message;err.classList.add('show');
+    btn.disabled=false;btn.textContent='Krijo Llogari';
+    return;
+  }
+  ok.textContent='✓ Llogaria u krijua! Duke të ridrejtuar...';ok.classList.add('show');
+  setTimeout(()=>redirectUser(data.user),1500);
+}
+</script>
+</body>
+</html>
