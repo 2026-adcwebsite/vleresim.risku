@@ -3,180 +3,509 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>JHA — Vlerësimi i Riskut</title>
+<title>JHA — Vlerësimi i Riskut rev03</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--red:#e2001a;--red-light:#fff0f0;--green:#1D9E75;--green-light:#f0faf5;--border:#e0e0e0;--text:#1a1a1a;--muted:#666;--bg:#f0f2f5}
+:root{
+  --red:#e2001a;--red-l:#fff0f0;
+  --green:#1D9E75;--green-l:#f0faf5;
+  --amber:#f59e0b;--amber-l:#fffbeb;
+  --border:#e0e0e0;--text:#1a1a1a;--muted:#666;--bg:#f0f2f5;
+}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-.app{max-width:480px;margin:0 auto;padding:0 0 90px}
-.header{background:#fff;padding:12px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
-.header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.logo{font-size:20px;font-weight:800;color:var(--red)}
-.user-info{display:flex;align-items:center;gap:8px}
-.user-name{font-size:13px;font-weight:600}
-.btn-logout{font-size:12px;color:var(--muted);cursor:pointer;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:#fff}
-.steps{display:flex;gap:4px}
-.step{flex:1;height:4px;border-radius:2px;background:var(--border);transition:background 0.3s}
+.app{max-width:500px;margin:0 auto;padding:0 0 100px}
+
+/* Header */
+.header{background:#fff;padding:12px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.hrow{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.logo{font-size:20px;font-weight:800;color:var(--red);letter-spacing:-0.5px}
+.uinfo{display:flex;align-items:center;gap:8px}
+.uname{font-size:13px;font-weight:600;color:var(--text)}
+.btn-logout{font-size:12px;color:var(--muted);cursor:pointer;padding:4px 9px;border:1px solid var(--border);border-radius:6px;background:#fff}
+.steps{display:flex;gap:3px}
+.step{flex:1;height:3px;border-radius:2px;background:var(--border);transition:background 0.3s}
 .step.done{background:var(--green)}.step.active{background:var(--red)}
-.page{display:none;padding:16px}.page.active{display:block}
-.page-num{font-size:11px;font-weight:600;color:var(--red);text-transform:uppercase;letter-spacing:1px}
-.page-title{font-size:18px;font-weight:700;margin-top:2px;margin-bottom:16px}
-.card{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;border:1px solid var(--border)}
-.field{margin-bottom:14px}.field:last-child{margin-bottom:0}
-.field label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
-.field input,.field select,.field textarea{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;color:var(--text);background:#fff;outline:none;transition:border-color 0.15s;-webkit-appearance:none}
+
+/* Pages */
+.page{display:none;padding:14px 16px}.page.active{display:block}
+.pnum{font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:1px}
+.ptitle{font-size:19px;font-weight:800;margin-top:2px;margin-bottom:4px;color:var(--text)}
+.psub{font-size:12px;color:var(--muted);margin-bottom:16px}
+
+/* Cards */
+.card{background:#fff;border-radius:12px;padding:15px;margin-bottom:10px;border:1px solid var(--border)}
+.card-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.card-title .icon{font-size:16px}
+
+/* Fields */
+.field{margin-bottom:12px}.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;color:var(--text);background:#fff;outline:none;transition:border-color 0.15s;-webkit-appearance:none}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--red)}
-.field textarea{min-height:80px;resize:vertical;line-height:1.5}
-.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
-.readonly-field{padding:11px 13px;background:#f9f9f9;border:1.5px solid var(--border);border-radius:8px;font-size:15px;color:var(--muted)}
-.risk-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.risk-card{background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.risk-card.sel{border-color:var(--red);background:var(--red-light)}
-.risk-card .ic{font-size:22px;margin-bottom:6px}
-.risk-card .lb{font-size:13px;font-weight:600;line-height:1.3}
-.risk-card .sb{font-size:11px;color:var(--muted);margin-top:2px}
-.risk-card.sel .lb{color:var(--red)}
-.chk{background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px}
-.chk.yes{border-color:var(--green);background:var(--green-light)}
-.chk.no{border-color:var(--red);background:var(--red-light)}
-.chk-q{font-size:13px;line-height:1.4;margin-bottom:10px}
-.chk-btns{display:flex;gap:6px}
-.chk-btn{flex:1;padding:8px;border-radius:7px;font-size:13px;font-weight:600;border:1.5px solid var(--border);background:#f5f5f5;color:var(--muted);cursor:pointer}
+.field textarea{min-height:75px;resize:vertical;line-height:1.5;font-size:14px}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px}
+.readonly-f{padding:10px 12px;background:#f8f8f8;border:1.5px solid var(--border);border-radius:8px;font-size:14px;color:var(--muted)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* Tipo punës checkboxes */
+.tipo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tipo-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid var(--border);border-radius:9px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s}
+.tipo-item.sel{border-color:var(--red);background:var(--red-l)}
+.tipo-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--red);flex-shrink:0}
+.tipo-lbl{font-size:12px;font-weight:600;color:var(--text);line-height:1.3}
+.tipo-item.sel .tipo-lbl{color:var(--red)}
+
+/* Activity cards */
+.act-card{background:#fff;border-radius:12px;margin-bottom:10px;border:1px solid var(--border);overflow:hidden}
+.act-header{padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.act-check{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;background:#fff}
+.act-card.active-act .act-check{background:var(--red);border-color:var(--red)}
+.act-check-mark{color:#fff;font-size:13px;font-weight:800;display:none}
+.act-card.active-act .act-check-mark{display:block}
+.act-title{font-size:14px;font-weight:700;color:var(--text);flex:1}
+.act-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.act-badge{font-size:11px;font-weight:700;color:var(--muted);background:#f5f5f5;padding:3px 7px;border-radius:10px;flex-shrink:0}
+.act-body{display:none;border-top:1px solid var(--border);padding:12px 14px;background:#fafafa}
+.act-card.active-act .act-body{display:block}
+.act-risks{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.risk-chip{font-size:11px;font-weight:600;padding:3px 9px;border-radius:10px;background:var(--red-l);color:var(--red)}
+
+/* Check questions */
+.chk-list{display:flex;flex-direction:column;gap:8px}
+.chk-item{background:#fff;border:1.5px solid var(--border);border-radius:9px;padding:10px 12px;transition:all 0.15s}
+.chk-item.yes{border-color:var(--green);background:var(--green-l)}
+.chk-item.no{border-color:var(--red);background:var(--red-l)}
+.chk-q{font-size:13px;color:var(--text);line-height:1.4;margin-bottom:8px}
+.chk-btns{display:flex;gap:5px}
+.chk-btn{flex:1;padding:7px 4px;border-radius:7px;font-size:12px;font-weight:700;border:1.5px solid var(--border);background:#f5f5f5;color:var(--muted);cursor:pointer;transition:all 0.15s;text-align:center}
 .chk-btn.apo{background:var(--green);border-color:var(--green);color:#fff}
 .chk-btn.ajo{background:var(--red);border-color:var(--red);color:#fff}
 .chk-btn.ana{background:#888;border-color:#888;color:#fff}
-.ppe-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.ppe-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid var(--border);border-radius:9px;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.ppe-item.chked{border-color:var(--green);background:var(--green-light)}
-.ppe-box{width:18px;height:18px;border-radius:4px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* PPE */
+.ppe-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.ppe-item{display:flex;align-items:center;gap:8px;padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s}
+.ppe-item.chked{border-color:var(--green);background:var(--green-l)}
+.ppe-box{width:17px;height:17px;border-radius:4px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s}
 .ppe-item.chked .ppe-box{background:var(--green);border-color:var(--green)}
-.ppe-tick{color:#fff;font-size:11px;font-weight:700;display:none}
+.ppe-tick{color:#fff;font-size:10px;font-weight:800;display:none}
 .ppe-item.chked .ppe-tick{display:block}
-.ppe-lbl{font-size:13px;font-weight:500}
-.photo-zone{border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer}
-.thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.thumb{position:relative;width:80px;height:80px}
+.ppe-lbl{font-size:12px;font-weight:600;color:var(--text);line-height:1.3}
+.ppe-std{font-size:10px;color:var(--muted);margin-top:1px}
+
+/* Photo */
+.photo-zone{border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:border-color 0.2s}
+.photo-zone:hover{border-color:var(--red)}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.thumb{position:relative;width:76px;height:76px}
 .thumb img{width:100%;height:100%;object-fit:cover;border-radius:8px}
-.thumb-del{position:absolute;top:-6px;right:-6px;width:20px;height:20px;background:var(--red);color:#fff;border-radius:50%;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700}
-.sig-cv{border:1.5px solid var(--border);border-radius:10px;width:100%;touch-action:none;background:#fafafa;display:block}
-.nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:8px;max-width:480px;margin:0 auto}
-.btn-back{flex:1;padding:13px;border-radius:10px;font-size:15px;font-weight:600;border:1.5px solid var(--border);background:#fff;cursor:pointer}
-.btn-next{flex:2;padding:13px;border-radius:10px;font-size:15px;font-weight:700;border:none;background:var(--red);color:#fff;cursor:pointer}
+.thumb-del{position:absolute;top:-5px;right:-5px;width:18px;height:18px;background:var(--red);color:#fff;border-radius:50%;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:800}
+
+/* Signature */
+.sig-cv{border:1.5px solid var(--border);border-radius:9px;width:100%;touch-action:none;background:#fafafa;display:block}
+
+/* Nav */
+.nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);padding:10px 16px;display:flex;gap:8px;max-width:500px;margin:0 auto;box-shadow:0 -2px 8px rgba(0,0,0,0.06)}
+.btn-back{flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:700;border:1.5px solid var(--border);background:#fff;cursor:pointer;color:var(--text)}
+.btn-next{flex:2;padding:12px;border-radius:10px;font-size:15px;font-weight:700;border:none;background:var(--red);color:#fff;cursor:pointer;transition:background 0.2s}
+.btn-next.submit{background:var(--green)}
 .btn-next:disabled{background:#ccc;cursor:not-allowed}
+
+/* Success */
 .success{text-align:center;padding:48px 20px}
-.s-icon{font-size:64px;margin-bottom:16px}
-.s-title{font-size:22px;font-weight:700;color:var(--green)}
-.s-text{font-size:14px;color:var(--muted);margin-top:8px;line-height:1.5}
-.s-id{font-size:12px;color:#999;margin-top:16px;font-family:monospace;background:#f5f5f5;padding:8px 12px;border-radius:6px;display:inline-block}
-.btn-new{margin-top:24px;padding:14px 32px;border-radius:10px;font-size:15px;font-weight:700;border:none;background:var(--red);color:#fff;cursor:pointer;width:100%}
-.loading-scr{position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:999}
-.spin{width:28px;height:28px;border:3px solid #f0f0f0;border-top-color:var(--red);border-radius:50%;animation:sp 0.8s linear infinite}
+.s-icon{font-size:56px;margin-bottom:14px}
+.s-title{font-size:22px;font-weight:800;color:var(--green)}
+.s-text{font-size:14px;color:var(--muted);margin-top:8px;line-height:1.6}
+.s-id{font-size:11px;font-family:monospace;background:#f5f5f5;padding:8px 14px;border-radius:6px;display:inline-block;margin-top:14px;color:#888}
+.btn-new{margin-top:20px;width:100%;padding:14px;border-radius:10px;font-size:15px;font-weight:700;border:none;background:var(--red);color:#fff;cursor:pointer}
+
+/* Loading */
+.lscr{position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:999}
+.spin{width:26px;height:26px;border:3px solid #f0f0f0;border-top-color:var(--red);border-radius:50%;animation:sp 0.8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
-.sec-lbl{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
+
+/* Nuk mund te kryhen */
+.alert-box{background:#fff8e1;border:1.5px solid var(--amber);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.alert-title{font-size:12px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
 </style>
 </head>
 <body>
-<div class="loading-scr" id="lscr"><div class="spin"></div><div style="font-size:14px;color:var(--muted)">Duke kontrolluar hyrjen...</div></div>
+
+<div class="lscr" id="lscr">
+  <div class="spin"></div>
+  <div style="font-size:13px;color:var(--muted)">Duke kontrolluar hyrjen...</div>
+</div>
+
 <div class="app" id="mapp" style="display:none">
   <div class="header">
-    <div class="header-row">
+    <div class="hrow">
       <div class="logo">ADC · JHA</div>
-      <div class="user-info">
-        <div class="user-name" id="uname">—</div>
+      <div class="uinfo">
+        <div class="uname" id="uname">—</div>
         <button class="btn-logout" onclick="doLogout()">Dil</button>
       </div>
     </div>
-    <div class="steps">
-      <div class="step active" id="s0"></div><div class="step" id="s1"></div>
-      <div class="step" id="s2"></div><div class="step" id="s3"></div>
-    </div>
+    <div class="steps" id="steps-bar"></div>
   </div>
 
+  <!-- ═══ PAGE 0: INFO ═══ -->
   <div class="page active" id="page0">
-    <div class="page-num">Hapi 1 nga 4</div>
-    <div class="page-title">Informacion i Përgjithshëm</div>
+    <div class="pnum">Hapi 1 nga 5</div>
+    <div class="ptitle">Informacion i Përgjithshëm</div>
+    <div class="psub">rev03 · ADCFTTX-HSM-RA-TE</div>
+
     <div class="card">
-      <div class="field"><label>Punonjësi</label><div class="readonly-field" id="disp-emri">—</div></div>
-      <div class="field"><label>Data</label><input type="date" id="data"></div>
-      <div class="field"><label>Nr. Ticket / Urdhër Pune</label><input type="text" id="ticket" placeholder="p.sh. TKT-2025-0123"></div>
-    </div>
-    <div class="card">
-      <div class="field"><label>Vendndodhja / Adresa</label><input type="text" id="adresa" placeholder="Rruga, Qyteti"></div>
-      <div class="field"><label>Lloji i Punës</label>
-        <select id="lloji">
-          <option value="">— Zgjidh llojin —</option>
-          <option>Instalim fibra optike</option><option>Mirëmbajtje / Riparim</option>
-          <option>Instalim në shtyllë</option><option>Punë në kanal nëntokësor</option>
-          <option>Aktivizim lidhje klienti</option><option>Punë në lartësi (kullë/çati)</option>
-          <option>Tjetër</option>
-        </select>
+      <div class="card-title"><span class="icon">👤</span> Punonjësi & Koha</div>
+      <div class="field"><label>Punonjësi</label><div class="readonly-f" id="disp-emri">—</div></div>
+      <div class="row2">
+        <div class="field"><label>Data</label><input type="date" id="data"></div>
+        <div class="field"><label>Ora</label><input type="time" id="ora"></div>
       </div>
+      <div class="field"><label>Nr. Urdhëri i Punës / Ticket</label><input type="text" id="ticket" placeholder="p.sh. TKT-2025-0123"></div>
       <div class="field"><label>Supervisor / Mbikëqyrës</label><input type="text" id="supervisor" placeholder="Emri i Mbikëqyrësit"></div>
     </div>
-  </div>
 
-  <div class="page" id="page1">
-    <div class="page-num">Hapi 2 nga 4</div>
-    <div class="page-title">Rreziqet e Pranishme</div>
     <div class="card">
-      <div class="sec-lbl">Zgjidh të gjitha rreziqet aktive</div>
-      <div class="risk-grid">
-        <div class="risk-card" onclick="tRisk(this,'lartesia')"><div class="ic">⚠️</div><div class="lb">Punë në Lartësi</div><div class="sb">Kullë, shkallë, çati</div></div>
-        <div class="risk-card" onclick="tRisk(this,'elektrike')"><div class="ic">⚡</div><div class="lb">Rrezik Elektrik</div><div class="sb">Kontakt me rrjetin</div></div>
-        <div class="risk-card" onclick="tRisk(this,'renie_obj')"><div class="ic">🏗️</div><div class="lb">Rënie Objektesh</div><div class="sb">Materiale nga lartësia</div></div>
-        <div class="risk-card" onclick="tRisk(this,'zjar')"><div class="ic">🔥</div><div class="lb">Zjarr</div><div class="sb">Materiale të ndezshme</div></div>
-        <div class="risk-card" onclick="tRisk(this,'pesash')"><div class="ic">💪</div><div class="lb">Ngritje Pesash</div><div class="sb">Mbi 25 kg</div></div>
-        <div class="risk-card" onclick="tRisk(this,'trafiku')"><div class="ic">🚗</div><div class="lb">Trafik Rrugor</div><div class="sb">Punë pranë rrugës</div></div>
-        <div class="risk-card" onclick="tRisk(this,'hapesira')"><div class="ic">🕳️</div><div class="lb">Hapësira të Kufizuara</div><div class="sb">Kanal, tunel</div></div>
-        <div class="risk-card" onclick="tRisk(this,'kimike')"><div class="ic">⚗️</div><div class="lb">Substanca Kimike</div><div class="sb">Tretës, acide</div></div>
+      <div class="card-title"><span class="icon">📍</span> Vendndodhja</div>
+      <div class="field"><label>Adresa / Zona e Punës</label><input type="text" id="adresa" placeholder="Rruga, Qyteti, Zona"></div>
+      <div class="field"><label>Klienti</label><input type="text" id="klienti" placeholder="Emri i klientit"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">🔧</span> Puna e Planifikuar</div>
+      <div class="tipo-grid" id="tipo-grid">
+        <div class="tipo-item" onclick="toggleTipo(this,'instalim_ri')">
+          <input type="checkbox" onclick="event.stopPropagation()">
+          <div><div class="tipo-lbl">Instalim i Ri</div><div style="font-size:10px;color:var(--muted)">Lartësi, elektrik, klient</div></div>
+        </div>
+        <div class="tipo-item" onclick="toggleTipo(this,'suport')">
+          <input type="checkbox" onclick="event.stopPropagation()">
+          <div><div class="tipo-lbl">Suport</div><div style="font-size:10px;color:var(--muted)">Shtyllë/Fasadë/Terrace</div></div>
+        </div>
+        <div class="tipo-item" onclick="toggleTipo(this,'migrim')">
+          <input type="checkbox" onclick="event.stopPropagation()">
+          <div><div class="tipo-lbl">Migrim</div><div style="font-size:10px;color:var(--muted)">Lartësi, elektrik, pusete</div></div>
+        </div>
+        <div class="tipo-item" onclick="toggleTipo(this,'kulle')">
+          <input type="checkbox" onclick="event.stopPropagation()">
+          <div><div class="tipo-lbl">Punime në Kullë</div><div style="font-size:10px;color:var(--muted)">Lartësi, pusete, terren</div></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="page" id="page2">
-    <div class="page-num">Hapi 3 nga 4</div>
-    <div class="page-title">Kontrollet e Sigurisë</div>
-    <div id="chks-wrap"></div>
-    <div class="card"><div class="sec-lbl">Vërejtje / Masa Shtesë</div>
-      <div class="field"><textarea id="verejte" placeholder="Çdo rrezik shtesë ose masë sigurie..."></textarea></div>
+  <!-- ═══ PAGE 1: AKTIVITETET 1-5 ═══ -->
+  <div class="page" id="page1">
+    <div class="pnum">Hapi 2 nga 5</div>
+    <div class="ptitle">Aktivitetet & Rreziqet</div>
+    <div class="psub">Aktivizo aktivitetet e pranishme dhe përgjigju pyetjeve</div>
+
+    <!-- ACT 1 -->
+    <div class="act-card" id="act1">
+      <div class="act-header" onclick="toggleAct('act1')">
+        <div class="act-check"><span class="act-check-mark">✓</span></div>
+        <div style="flex:1">
+          <div class="act-title">1. Kushtet Atmosferike</div>
+          <div class="act-sub">Kushte të pafavorshme atmosferike</div>
+        </div>
+        <div class="act-badge">2 pyetje</div>
+      </div>
+      <div class="act-body">
+        <div class="act-risks"><span class="risk-chip">⛈️ Kushte atmosferike</span></div>
+        <div class="chk-list">
+          <div class="chk-item" id="a1q1">
+            <div class="chk-q">1. A jeni të informuar për ndalimin e punimeve jashtë nën kushte atmosferike të papërshtatshme si shi i dendur, shkarkesa atmosferike, reshje bore, ngricë?</div>
+            <div class="chk-btns">
+              <button class="chk-btn" onclick="sChk('a1q1','po',this)">✓ Po</button>
+              <button class="chk-btn" onclick="sChk('a1q1','jo',this)">✗ Jo</button>
+            </div>
+          </div>
+          <div class="chk-item" id="a1q2">
+            <div class="chk-q">2. A janë kushtet atmosferike të përshtatshme për një punë të sigurtë dhe pa rreziqe shoqëruese (rrëshqitje, goditje nga shkarkesa elektrike, mungesë shikueshmërie etj)?</div>
+            <div class="chk-btns">
+              <button class="chk-btn" onclick="sChk('a1q2','po',this)">✓ Po</button>
+              <button class="chk-btn" onclick="sChk('a1q2','jo',this)">✗ Jo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACT 2 -->
+    <div class="act-card" id="act2">
+      <div class="act-header" onclick="toggleAct('act2')">
+        <div class="act-check"><span class="act-check-mark">✓</span></div>
+        <div style="flex:1">
+          <div class="act-title">2. Drejtimi i Mjetit</div>
+          <div class="act-sub">Aksidente rrugore · Zjarr</div>
+        </div>
+        <div class="act-badge">4 pyetje</div>
+      </div>
+      <div class="act-body">
+        <div class="act-risks"><span class="risk-chip">🚗 Aksidente rrugore</span><span class="risk-chip">🔥 Zjarr</span></div>
+        <div class="chk-list">
+          <div class="chk-item" id="a2q1"><div class="chk-q">1. A është kontrolluar mjeti i punës që të jetë i sigurt?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a2q1','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a2q1','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a2q2"><div class="chk-q">2. A është personeli i autorizuar që të drejtojë mjetin (leje drejtimi, trajnim)?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a2q2','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a2q2','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a2q3"><div class="chk-q">3. A është mjeti i pajisur me fikse zjarri / kuti të ndihmës së parë?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a2q3','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a2q3','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a2q4"><div class="chk-q">4. A është stafi i trajnuar mbi Drejtimin e Sigurtë, Politikën e Tolerancës Zero dhe Përgjigjen në rastet emergjente të një aksidenti rrugor? (112;127;128;129)</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a2q4','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a2q4','jo',this)">✗ Jo</button></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACT 3 -->
+    <div class="act-card" id="act3">
+      <div class="act-header" onclick="toggleAct('act3')">
+        <div class="act-check"><span class="act-check-mark">✓</span></div>
+        <div style="flex:1">
+          <div class="act-title">3. Punime në Lartësi</div>
+          <div class="act-sub">Shkallë · Fasadë · Terrace Objekti</div>
+        </div>
+        <div class="act-badge">5 pyetje</div>
+      </div>
+      <div class="act-body">
+        <div class="act-risks"><span class="risk-chip">⚠️ Rënie nga Lartësia</span><span class="risk-chip">🏗️ Rënie Objektesh</span></div>
+        <div class="chk-list">
+          <div class="chk-item" id="a3q1"><div class="chk-q">1. A është shkalla që do të përdoret në punë standart EN 131, e kontrolluar dhe pa difekte?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a3q1','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a3q1','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a3q2"><div class="chk-q">2. A janë të trajnuar punonjësit për punime të sigurta mbi shkallë në lartësi mbi 2 metra duke përdorur masat mbrojtëse ndaj rënies (rregulli 4:1, gjithmonë 3 pika kontakti, punë në grup, rrip sig)?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a3q2','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a3q2','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a3q3"><div class="chk-q">3. A janë të pajisur me shkallë dielektrike, pajisje mbrojtëse ndaj rënies (litar pozicionimi, frenues ndaj rënies, litar për të fiksuar shkallën në shtyllë, helmet, këpucë pune, jelek sinjalizues, indikator/detektor)?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a3q3','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a3q3','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a3q4"><div class="chk-q">4. A është kontrolluar vendi i punës të jetë i sigurtë për vendosjen e shkallës (terreni i sheshte, nëse ka linja elektrike në lartësinë që do të punohet, nëse egzistojnë rreziqe të tjera)?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a3q4','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a3q4','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a3q5"><div class="chk-q">5. A është i rrethuar vendi i punës me sinjalistikën e duhur dhe të vendosur?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a3q5','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a3q5','jo',this)">✗ Jo</button></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACT 4 -->
+    <div class="act-card" id="act4">
+      <div class="act-header" onclick="toggleAct('act4')">
+        <div class="act-check"><span class="act-check-mark">✓</span></div>
+        <div style="flex:1">
+          <div class="act-title">4. Punime me Pajisje Manuale Elektrike</div>
+          <div class="act-sub">Elektroshok · Djegie · Zjarr</div>
+        </div>
+        <div class="act-badge">8 pyetje</div>
+      </div>
+      <div class="act-body">
+        <div class="act-risks"><span class="risk-chip">⚡ Kontakt elektrik</span><span class="risk-chip">🔥 Zjarr</span></div>
+        <div class="chk-list">
+          <div class="chk-item" id="a4q1"><div class="chk-q">1. A jeni të autorizuar dhe trajnuar për punë me paisje elektrike (Cert. e Sigurimit Teknik Elektrik)?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a4q1','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a4q1','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a4q2"><div class="chk-q">2. A është shkëputur paisja / instalimi nga tensioni?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a4q2','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a4q2','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a4q3"><div class="chk-q">3. A keni veshur Pajisjet Personale Mbrojtëse që ju mbrojnë nga rënia në kontakt me rrymën?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a4q3','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a4q3','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a4q4"><div class="chk-q">4. A keni dijeni mbi procedurën për punë me paisjet elektrike?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a4q4','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a4q4','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a4q5"><div class="chk-q">5. A ka tokëzim paisja / Instalimi elektrik? *</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a4q5','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a4q5','jo',this)">✗ Jo</button><button class="chk-btn" onclick="sChk('a4q5','na',this)">N/A</button></div></div>
+          <div class="chk-item" id="a4q6"><div class="chk-q">6. A janë të kontrolluara pajisjet që përdorni? (të izoluara nga kontakti elektrik)</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a4q6','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a4q6','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a4q7"><div class="chk-q">7. Keni detektues të tensionit (Indikator pa kontakt)? *</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a4q7','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a4q7','jo',this)">✗ Jo</button><button class="chk-btn" onclick="sChk('a4q7','na',this)">N/A</button></div></div>
+          <div class="chk-item" id="a4q8"><div class="chk-q">8. Fikse zjarri / kuti e ndihmës së shpejtë?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a4q8','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a4q8','jo',this)">✗ Jo</button></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACT 5 -->
+    <div class="act-card" id="act5">
+      <div class="act-header" onclick="toggleAct('act5')">
+        <div class="act-check"><span class="act-check-mark">✓</span></div>
+        <div style="flex:1">
+          <div class="act-title">5. Punime pranë Instalimeve & Pajisjeve Elektrike</div>
+          <div class="act-sub">Elektroshok · Rënie nga lartësia</div>
+        </div>
+        <div class="act-badge">5 pyetje</div>
+      </div>
+      <div class="act-body">
+        <div class="act-risks"><span class="risk-chip">⚡ Elektroshok</span><span class="risk-chip">⚠️ Rënie lartësi</span></div>
+        <div class="chk-list">
+          <div class="chk-item" id="a5q1"><div class="chk-q">1. A jeni të trajnuar për punë afër inst. & paisjeve elektrike (Cert. e Sigurimit Teknik Elektrik)?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a5q1','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a5q1','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a5q2"><div class="chk-q">2. A jeni të pajisur me PMI / Helmetat, këpucët, doreza pune, indikator, detektor tensioni afërsie?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a5q2','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a5q2','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a5q3"><div class="chk-q">3. A është distanca nga linja elektrike e sigurtë (Deri 1000V — 1.5/2m; &gt;10kV — 3/5m)? *</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a5q3','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a5q3','jo',this)">✗ Jo</button><button class="chk-btn" onclick="sChk('a5q3','na',this)">N/A</button></div></div>
+          <div class="chk-item" id="a5q4"><div class="chk-q">4. A janë shkallët jopërcjellëse të standartit EN 131 prezente?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a5q4','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a5q4','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a5q5"><div class="chk-q">5. I keni detektorët e prezencës së tensionit / indikatorët pa kontakt?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a5q5','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a5q5','jo',this)">✗ Jo</button></div></div>
+        </div>
+      </div>
     </div>
   </div>
 
+  <!-- ═══ PAGE 2: AKTIVITETET 6-10 ═══ -->
+  <div class="page" id="page2">
+    <div class="pnum">Hapi 3 nga 5</div>
+    <div class="ptitle">Aktivitetet & Rreziqet</div>
+    <div class="psub">Vazhdo me aktivitetet e mbetura</div>
+
+    <!-- ACT 6 -->
+    <div class="act-card" id="act6">
+      <div class="act-header" onclick="toggleAct('act6')">
+        <div class="act-check"><span class="act-check-mark">✓</span></div>
+        <div style="flex:1">
+          <div class="act-title">6. Punë në Pus Teknik / Parking / Cati</div>
+          <div class="act-sub">Rënie · Sipërfaqe të brishte · Pusete</div>
+        </div>
+        <div class="act-badge">5 pyetje</div>
+      </div>
+      <div class="act-body">
+        <div class="act-risks"><span class="risk-chip">🕳️ Rënie nga lartësia</span><span class="risk-chip">⚠️ Sipërfaqe brishte</span></div>
+        <div class="chk-list">
+          <div class="chk-item" id="a6q1"><div class="chk-q">1. A mund të kryhet puna e sigurtë (ka barriera & parmake anësore për mbrojtje nga rënia, skare mbrojtëse në dritare)?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a6q1','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a6q1','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a6q2"><div class="chk-q">2. A punohet në grup minimumi 2 ose më shumë punëtor?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a6q2','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a6q2','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a6q3"><div class="chk-q">3. A janë marrë masa nëse nuk ka mbrojtje për rëniet nga lartësia? A duhen përdorur pajisjet mbrojtëse ndaj rënies nga lartësia dhe të fiksohen në pikë të sigurtë ankorimi?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a6q3','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a6q3','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a6q4"><div class="chk-q">4. Është rrethuar puseta e hapur me kone / shirit / tabela sinjalizuese?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a6q4','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a6q4','jo',this)">✗ Jo</button><button class="chk-btn" onclick="sChk('a6q4','na',this)">N/A</button></div></div>
+          <div class="chk-item" id="a6q5"><div class="chk-q">5. A keni kryer testimet e duhura nëse në pus, parking, çati, sipërfaqe të brishte për prezencë tensioni?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a6q5','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a6q5','jo',this)">✗ Jo</button></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACT 7 -->
+    <div class="act-card" id="act7">
+      <div class="act-header" onclick="toggleAct('act7')">
+        <div class="act-check"><span class="act-check-mark">✓</span></div>
+        <div style="flex:1">
+          <div class="act-title">7. Ngritja / Transporti Manual i Peshave</div>
+          <div class="act-sub">Ngritje e peshave me forcën e krahëve</div>
+        </div>
+        <div class="act-badge">3 pyetje</div>
+      </div>
+      <div class="act-body">
+        <div class="act-risks"><span class="risk-chip">💪 Ngritje pesash</span></div>
+        <div class="chk-list">
+          <div class="chk-item" id="a7q1"><div class="chk-q">1. A jeni të trajnuar për ngritjen manuale me forcën e krahut?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a7q1','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a7q1','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a7q2"><div class="chk-q">2. Ngritja, lëvizja, transporti të bëhet me dy ose më shumë punëtorë kur pesha i kalon 25kg.</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a7q2','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a7q2','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a7q3"><div class="chk-q">3. Ka paisje të përshtatshme për ngritjen e kapakeve (levë, gancë...)?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a7q3','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a7q3','jo',this)">✗ Jo</button><button class="chk-btn" onclick="sChk('a7q3','na',this)">N/A</button></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACT 8 -->
+    <div class="act-card" id="act8">
+      <div class="act-header" onclick="toggleAct('act8')">
+        <div class="act-check"><span class="act-check-mark">✓</span></div>
+        <div style="flex:1">
+          <div class="act-title">8. Ngjitja në Kullë</div>
+          <div class="act-sub">Rënie nga lartësia · Rënie objektesh</div>
+        </div>
+        <div class="act-badge">6 pyetje</div>
+      </div>
+      <div class="act-body">
+        <div class="act-risks"><span class="risk-chip">🗼 Kullë</span><span class="risk-chip">⚠️ Rënie lartësi</span></div>
+        <div class="chk-list">
+          <div class="chk-item" id="a8q1"><div class="chk-q">1. A është i trajnuar dhe certifikuar personeli që të punojë në kullë? *</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a8q1','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a8q1','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a8q2"><div class="chk-q">2. A i keni kontrolluar pajisjet mbrojtëse për punë në lartësi (rripat e sigurisë dhe aksesorët) — A janë të rregullta/pa dëmtime dhe të sigurta para përdorimit? *</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a8q2','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a8q2','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a8q3"><div class="chk-q">3. A i keni PMI e tjera të veshura (kaska, këpucë, doreza etj)? *</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a8q3','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a8q3','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a8q4"><div class="chk-q">4. Ka një pikë ankorimi (fiksimi) të përshtatshme? *</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a8q4','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a8q4','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a8q5"><div class="chk-q">5. Janë shkallët vertikale të kontrolluara para se të ngjiteni?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a8q5','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a8q5','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a8q6"><div class="chk-q">6. Ka çantë për veglat / ose vend për lidhjen e veglave?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a8q6','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a8q6','jo',this)">✗ Jo</button><button class="chk-btn" onclick="sChk('a8q6','na',this)">N/A</button></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACT 9 -->
+    <div class="act-card" id="act9">
+      <div class="act-header" onclick="toggleAct('act9')">
+        <div class="act-check"><span class="act-check-mark">✓</span></div>
+        <div style="flex:1">
+          <div class="act-title">9. Punime në Hapësira të Kufizuara</div>
+          <div class="act-sub">Asfiksim · Zjarr · Materiale inerte</div>
+        </div>
+        <div class="act-badge">7 pyetje</div>
+      </div>
+      <div class="act-body">
+        <div class="act-risks"><span class="risk-chip">🕳️ Hapësira të kufizuara</span><span class="risk-chip">🔥 Zjarr</span></div>
+        <div class="chk-list">
+          <div class="chk-item" id="a9q1"><div class="chk-q">3. Është personeli që do të punojë në hapësirë i trajnuar dhe certifikuar?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a9q1','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a9q1','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a9q2"><div class="chk-q">4. Janë paisje e punës të kontrolluara dhe funksionale?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a9q2','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a9q2','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a9q3"><div class="chk-q">5. Janë PAISJET INDIVIDUALE MBROJTËSE në dispozicion (përfshire maskat)? *</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a9q3','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a9q3','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a9q4"><div class="chk-q">6. Ka detektor gazi (O₂ / H₂S / CO) prezent dhe funksional? *</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a9q4','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a9q4','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a9q5"><div class="chk-q">7. Ka person që bën mbikëqyrjen në hyrje të hapësirës? *</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a9q5','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a9q5','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a9q6"><div class="chk-q">8. A keni njohuri për procedurën e hyrjes dhe të emergjencës? Janë paisjet e emergjencës prezente (tripod, rripa)? *</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a9q6','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a9q6','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a9q7"><div class="chk-q">9. Rrethoni zonën e punës.</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a9q7','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a9q7','jo',this)">✗ Jo</button></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACT 10 -->
+    <div class="act-card" id="act10">
+      <div class="act-header" onclick="toggleAct('act10')">
+        <div class="act-check"><span class="act-check-mark">✓</span></div>
+        <div style="flex:1">
+          <div class="act-title">10. Komunikimi me Klientin</div>
+          <div class="act-sub">Konflikte verbale / fizike</div>
+        </div>
+        <div class="act-badge">2 pyetje</div>
+      </div>
+      <div class="act-body">
+        <div class="act-risks"><span class="risk-chip">⚠️ Konflikte me klientin</span></div>
+        <div class="chk-list">
+          <div class="chk-item" id="a10q1"><div class="chk-q">1. A keni vështirësi të komunikoni me klientin (tregon agresivitet, reagon ashpër, tregon shenja nervozizmi)?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a10q1','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a10q1','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a10q2"><div class="chk-q">2. A ndiheni të ofenduar/kërcënuar kur operoni në brendësi të objektit, banesës, ambientit të klientit?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a10q2','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a10q2','jo',this)">✗ Jo</button></div></div>
+        </div>
+        <div style="margin-top:10px;padding:10px;background:#fff8e1;border-radius:8px;border:1px solid var(--amber);font-size:12px;color:#92400e;line-height:1.5">
+          ⚠️ Në rast se ndiheni të ofenduar/kërcënuar apo klienti kryen veprime që tentojnë dhunë ndaj jush, <strong>pezulloni menjëherë aktivitetin dhe largohuni</strong>, duke vënë në dijeni supervisorin.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE 3: PMI ═══ -->
   <div class="page" id="page3">
-    <div class="page-num">Hapi 4 nga 4</div>
-    <div class="page-title">PMI, Foto & Nënshkrim</div>
-    <div class="card"><div class="sec-lbl">Paisjet Mbrojtëse (PMI)</div><div class="ppe-grid" id="ppe-grid"></div></div>
+    <div class="pnum">Hapi 4 nga 5</div>
+    <div class="ptitle">Paisjet Mbrojtëse Individuale</div>
+    <div class="psub">Kontrollo cilat PMI ke veshur sot</div>
     <div class="card">
-      <div class="sec-lbl">Foto nga Terreni</div>
+      <div class="ppe-grid" id="ppe-grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">📝</span> Vërejtje / Masa Shtesë</div>
+      <div class="field">
+        <textarea id="verejte" placeholder="Shkruaj çdo rrezik shtesë ose masë sigurie të nevojshme..."></textarea>
+      </div>
+    </div>
+
+    <div class="card" style="border-color:var(--red);background:#fff8f8">
+      <div class="card-title" style="color:var(--red)"><span class="icon">🚫</span> NE KUSHTE KUR PUNIMET NUK MUND TË KRYHEN</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">Pezulloni aktivitetin, bëni foto, dërgoni vendndodhjen, lajmëroni supervisorin deri në marrjen e masave të duhura.</div>
+      <div class="field">
+        <label>Shkruaj Arsyen PSE nuk mund të kryhet puna</label>
+        <textarea id="arsye_pezullim" placeholder="p.sh. Prezencë tensioni në shtyllë, kushte atmosferike të papërshtatshme, pusi teknik pa mbrojtje etj..." style="border-color:#fca5a5"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE 4: FOTO + FIRMA ═══ -->
+  <div class="page" id="page4">
+    <div class="pnum">Hapi 5 nga 5</div>
+    <div class="ptitle">Foto & Nënshkrim</div>
+    <div class="psub">Dokumento vendin e punës dhe nënshkruaj</div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">📷</span> Foto nga Terreni</div>
       <input type="file" id="photoInput" accept="image/*" multiple style="display:none" onchange="handlePhotos(this)">
       <div class="photo-zone" onclick="document.getElementById('photoInput').click()">
-        <div style="font-size:32px;margin-bottom:8px">📷</div>
-        <div style="font-size:14px;font-weight:600">Shtyp për të shtuar foto</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px">Mund të zgjedhësh disa njëherësh</div>
+        <div style="font-size:28px;margin-bottom:6px">📷</div>
+        <div style="font-size:14px;font-weight:700">Shtyp për të shtuar foto</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Mund të zgjedhësh disa foto njëherësh</div>
       </div>
       <div class="thumbs" id="thumbs"></div>
     </div>
+
     <div class="card">
-      <div class="sec-lbl">Nënshkrim Dixhital</div>
-      <canvas id="sigCv" class="sig-cv" height="120"></canvas>
+      <div class="card-title"><span class="icon">✍️</span> Nënshkrim Dixhital</div>
+      <canvas id="sigCv" class="sig-cv" height="110"></canvas>
       <div style="display:flex;justify-content:flex-end;margin-top:8px">
-        <button onclick="clearSig()" style="font-size:13px;color:var(--muted);cursor:pointer;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:#fff">Fshij</button>
+        <button onclick="clearSig()" style="font-size:12px;color:var(--muted);cursor:pointer;padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:#fff">Fshij nënshkrimin</button>
       </div>
     </div>
   </div>
 
+  <!-- SUCCESS -->
   <div class="page" id="pageOK">
     <div class="success">
       <div class="s-icon">✅</div>
-      <div class="s-title">Forma u Dërgua!</div>
-      <div class="s-text">Vlerësimi JHA u ruajt me sukses.<br>Supervisor-i do ta shohë menjëherë.</div>
+      <div class="s-title">Forma JHA u Dërgua!</div>
+      <div class="s-text">Vlerësimi u ruajt me sukses.<br>Supervisor-i do ta shohë menjëherë.</div>
       <div class="s-id" id="s-ref"></div>
       <button class="btn-new" onclick="resetForm()">+ Formë e Re</button>
     </div>
   </div>
 </div>
 
+<!-- Nav -->
 <div class="nav" id="nav-bar" style="display:none">
   <button class="btn-back" id="btn-back" onclick="prevPage()" style="display:none">← Prapa</button>
   <button class="btn-next" id="btn-next" onclick="nextPage()">Vazhdo →</button>
@@ -188,21 +517,29 @@ const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI
 const {createClient}=supabase;
 const sb=createClient(SURL,SKEY);
 
-let cu=null,prof=null,cp=0,risks=[],photos=[],chks={};
+const TOTAL_PAGES=5;
+let cp=0,cu=null,prof=null;
+let tipoSel=[],actSel=[],chks={},photos=[],ppeChked=[];
 
-const Qs=[
-  {id:'q1',t:'Ka personel të mjaftueshëm (minimum 2 punonjës)?',na:false},
-  {id:'q2',t:'Pajisjet janë të certifikuara dhe në gjendje të mirë?',na:false},
-  {id:'q3',t:'Personeli është trajnuar dhe ka certifikata?',na:false},
-  {id:'q4',t:'Paisjet PMI janë OK (kasko, kapuce, doreza, etj.)?',na:false},
-  {id:'q5',t:'Ka detektor gazi (O₂/H₂S/CO) gjatë punës në hapësira?',na:true},
-  {id:'q6',t:'Zona e emergjencës dhe rrugët e daljes janë identifikuar?',na:false},
-  {id:'q7',t:'Procedurat për emergjencat janë identifikuar?',na:false},
-  {id:'q8',t:'Shkallët/lidhjet janë siguruar dhe pajisjet vendosur stabël?',na:false},
-  {id:'q9',t:'Distanca nga linja elektrike mbi 2m është verifikuar?',na:true},
+const PPE_LIST=[
+  {l:'Këpucë pune',s:'EN ISO 20345:2011'},
+  {l:'Helmeta',s:'EN397 & EN-12492'},
+  {l:'Doreza pune',s:'EN ISO 21420:2020'},
+  {l:'Rroba pune',s:'—'},
+  {l:'Jelek fosforishëm',s:'EN ISO 20471 Class 1'},
+  {l:'Syze sigurie',s:'EN 166, EN 170'},
+  {l:'Maskë gazi',s:'EN136:1998'},
+  {l:'Rrip sigurimi',s:'EN 361/358/813/795/12841'},
+  {l:'Mbrojtëse dëgjimi',s:'EN 352-2, SNR 37dB'},
 ];
-const PPE=['Kapuce / Helmet','Këpucë sigurie','Doreza','Rroba pune','Syze sigurie','Maskë gazi','Jelek fosforishëm','Rrip sigurie / Arnés','Mbrojtëse dëgjimi'];
 
+// Init steps bar
+function initSteps(){
+  const bar=document.getElementById('steps-bar');
+  bar.innerHTML=Array.from({length:TOTAL_PAGES},(_,i)=>`<div class="step" id="st${i}"></div>`).join('');
+}
+
+// Auth
 sb.auth.getSession().then(async({data:{session}})=>{
   if(!session){window.location.href='login.html';return;}
   cu=session.user;
@@ -215,57 +552,60 @@ sb.auth.getSession().then(async({data:{session}})=>{
   document.getElementById('lscr').style.display='none';
   document.getElementById('mapp').style.display='block';
   document.getElementById('nav-bar').style.display='flex';
-  document.getElementById('data').valueAsDate=new Date();
-  initChks();initPPE();initSig();updateNav();
+  // Set date/time
+  const now=new Date();
+  document.getElementById('data').valueAsDate=now;
+  document.getElementById('ora').value=now.toTimeString().substring(0,5);
+  initSteps();initPPE();initSig();updateNav();
 });
 
 async function doLogout(){await sb.auth.signOut();window.location.href='login.html';}
 
-function initChks(){
-  document.getElementById('chks-wrap').innerHTML=Qs.map(q=>`
-    <div class="chk" id="ci_${q.id}">
-      <div class="chk-q">${q.t}</div>
-      <div class="chk-btns">
-        <button class="chk-btn" onclick="sChk('${q.id}','po',this)">✓ Po</button>
-        <button class="chk-btn" onclick="sChk('${q.id}','jo',this)">✗ Jo</button>
-        ${q.na?`<button class="chk-btn" onclick="sChk('${q.id}','na',this)">N/A</button>`:''}
-      </div>
-    </div>`).join('');
+// Tipo punës
+function toggleTipo(el,id){
+  el.classList.toggle('sel');
+  const cb=el.querySelector('input');
+  cb.checked=!cb.checked;
+  if(tipoSel.includes(id))tipoSel=tipoSel.filter(x=>x!==id);
+  else tipoSel.push(id);
 }
+
+// Activities
+function toggleAct(id){
+  const card=document.getElementById(id);
+  const wasActive=card.classList.contains('active-act');
+  card.classList.toggle('active-act');
+  if(!wasActive){if(!actSel.includes(id))actSel.push(id);}
+  else{actSel=actSel.filter(x=>x!==id);}
+}
+
+// Checks
 function sChk(id,v,btn){
-  const it=document.getElementById('ci_'+id);
-  it.querySelectorAll('.chk-btn').forEach(b=>b.classList.remove('apo','ajo','ana'));
-  it.classList.remove('yes','no');chks[id]=v;
-  if(v==='po'){btn.classList.add('apo');it.classList.add('yes');}
-  else if(v==='jo'){btn.classList.add('ajo');it.classList.add('no');}
+  const item=document.getElementById(id);
+  item.querySelectorAll('.chk-btn').forEach(b=>b.classList.remove('apo','ajo','ana'));
+  item.classList.remove('yes','no');
+  chks[id]=v;
+  if(v==='po'){btn.classList.add('apo');item.classList.add('yes');}
+  else if(v==='jo'){btn.classList.add('ajo');item.classList.add('no');}
   else btn.classList.add('ana');
 }
+
+// PPE
 function initPPE(){
-  document.getElementById('ppe-grid').innerHTML=PPE.map((p,i)=>`
+  document.getElementById('ppe-grid').innerHTML=PPE_LIST.map((p,i)=>`
     <div class="ppe-item" id="pp${i}" onclick="tPpe(${i})">
       <div class="ppe-box"><span class="ppe-tick">✓</span></div>
-      <div class="ppe-lbl">${p}</div>
+      <div><div class="ppe-lbl">${p.l}</div><div class="ppe-std">${p.s}</div></div>
     </div>`).join('');
 }
-function tPpe(i){document.getElementById('pp'+i).classList.toggle('chked');}
-function tRisk(c,id){c.classList.toggle('sel');risks.includes(id)?risks=risks.filter(r=>r!==id):risks.push(id);}
-
-function updateNav(){
-  document.getElementById('btn-back').style.display=cp>0?'block':'none';
-  const bn=document.getElementById('btn-next');
-  if(cp===3){bn.textContent='✓ Dërgo JHA';bn.style.background='#1D9E75';}
-  else{bn.textContent='Vazhdo →';bn.style.background='';}
-  document.querySelectorAll('.step').forEach((s,i)=>{s.className='step';if(i<cp)s.classList.add('done');else if(i===cp)s.classList.add('active');});
+function tPpe(i){
+  const el=document.getElementById('pp'+i);
+  el.classList.toggle('chked');
+  if(el.classList.contains('chked')){if(!ppeChked.includes(i))ppeChked.push(i);}
+  else ppeChked=ppeChked.filter(x=>x!==i);
 }
-function showPage(n){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById(n>=4?'pageOK':'page'+n).classList.add('active');
-  document.getElementById('nav-bar').style.display=n>=4?'none':'flex';
-  window.scrollTo(0,0);
-}
-function prevPage(){if(cp>0){cp--;showPage(cp);updateNav();}}
-function nextPage(){if(cp===3){submitForm();return;}cp++;showPage(cp);updateNav();}
 
+// Photos
 function handlePhotos(inp){
   Array.from(inp.files).forEach(f=>{
     const r=new FileReader();
@@ -273,16 +613,18 @@ function handlePhotos(inp){
       photos.push(e.target.result);
       const idx=photos.length-1;
       const d=document.createElement('div');d.className='thumb';
-      d.innerHTML=`<img src="${e.target.result}"><div class="thumb-del" onclick="rmPhoto(${idx},this)">×</div>`;
+      d.innerHTML=`<img src="${e.target.result}"><div class="thumb-del" onclick="rmPh(${idx},this)">×</div>`;
       document.getElementById('thumbs').appendChild(d);
     };r.readAsDataURL(f);
   });
 }
-function rmPhoto(idx,btn){photos[idx]=null;btn.closest('.thumb').remove();}
+function rmPh(idx,btn){photos[idx]=null;btn.closest('.thumb').remove();}
 
+// Signature
 function initSig(){
   const cv=document.getElementById('sigCv'),ctx=cv.getContext('2d');let dr=false;
-  function gp(e){const r=cv.getBoundingClientRect(),sx=cv.width/r.width,sy=cv.height/r.height;return e.touches?{x:(e.touches[0].clientX-r.left)*sx,y:(e.touches[0].clientY-r.top)*sy}:{x:(e.clientX-r.left)*sx,y:(e.clientY-r.top)*sy};}
+  function gp(e){const r=cv.getBoundingClientRect(),sx=cv.width/r.width,sy=cv.height/r.height;
+    return e.touches?{x:(e.touches[0].clientX-r.left)*sx,y:(e.touches[0].clientY-r.top)*sy}:{x:(e.clientX-r.left)*sx,y:(e.clientY-r.top)*sy};}
   cv.addEventListener('mousedown',e=>{dr=true;const p=gp(e);ctx.beginPath();ctx.moveTo(p.x,p.y);});
   cv.addEventListener('mousemove',e=>{if(!dr)return;const p=gp(e);ctx.lineTo(p.x,p.y);ctx.strokeStyle='#e2001a';ctx.lineWidth=2;ctx.lineCap='round';ctx.stroke();});
   cv.addEventListener('mouseup',()=>dr=false);
@@ -292,19 +634,52 @@ function initSig(){
 }
 function clearSig(){const c=document.getElementById('sigCv');c.getContext('2d').clearRect(0,0,c.width,c.height);}
 
+// Navigation
+function updateNav(){
+  document.getElementById('btn-back').style.display=cp>0?'block':'none';
+  const bn=document.getElementById('btn-next');
+  if(cp===TOTAL_PAGES-1){bn.textContent='✓ Dërgo JHA';bn.classList.add('submit');}
+  else{bn.textContent='Vazhdo →';bn.classList.remove('submit');}
+  for(let i=0;i<TOTAL_PAGES;i++){
+    const s=document.getElementById('st'+i);
+    if(!s)continue;
+    s.className='step';
+    if(i<cp)s.classList.add('done');
+    else if(i===cp)s.classList.add('active');
+  }
+}
+
+function showPage(n){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(n>=TOTAL_PAGES?'pageOK':'page'+n).classList.add('active');
+  document.getElementById('nav-bar').style.display=n>=TOTAL_PAGES?'none':'flex';
+  window.scrollTo(0,0);
+}
+function prevPage(){if(cp>0){cp--;showPage(cp);updateNav();}}
+function nextPage(){
+  if(cp===TOTAL_PAGES-1){submitForm();return;}
+  cp++;showPage(cp);updateNav();
+}
+
+// Submit
 async function submitForm(){
   const bn=document.getElementById('btn-next');bn.disabled=true;bn.textContent='Duke dërguar...';
-  const pmi=PPE.filter((_,i)=>document.getElementById('pp'+i)?.classList.contains('chked'));
+  const pmiSelected=PPE_LIST.filter((_,i)=>ppeChked.includes(i)).map(p=>p.l);
   const {data:{session}}=await sb.auth.getSession();
   const payload={
     user_id:cu.id,user_email:cu.email,user_fullname:prof?.full_name||cu.email,
-    data:new Date().toISOString(),emri:prof?.full_name||cu.email,
+    emri:prof?.full_name||cu.email,
+    data:document.getElementById('data').value+'T'+document.getElementById('ora').value+':00',
     ticket:document.getElementById('ticket').value,
     adresa:document.getElementById('adresa').value,
-    lloji:document.getElementById('lloji').value,
     supervisor:document.getElementById('supervisor').value,
-    rreziqet:risks,kontrollet:chks,pmi,
+    lloji:tipoSel.join(', '),
+    klienti:document.getElementById('klienti').value,
+    rreziqet:actSel,
+    kontrollet:chks,
+    pmi:pmiSelected,
     verejte:document.getElementById('verejte').value,
+    arsye_pezullim:document.getElementById('arsye_pezullim').value,
     signature:document.getElementById('sigCv').toDataURL(),
     foto_urls:photos.filter(Boolean)
   };
@@ -315,22 +690,38 @@ async function submitForm(){
       body:JSON.stringify(payload)
     });
     const d=await res.json();
-    if(res.ok&&d[0]){document.getElementById('s-ref').textContent='ID: '+d[0].id.substring(0,8).toUpperCase();cp=4;showPage(4);}
-    else{alert('Gabim gjatë dërgimit.');bn.disabled=false;bn.textContent='✓ Dërgo JHA';bn.style.background='#1D9E75';}
-  }catch{alert('Gabim lidhje.');bn.disabled=false;bn.textContent='✓ Dërgo JHA';bn.style.background='#1D9E75';}
+    if(res.ok&&d[0]){
+      document.getElementById('s-ref').textContent='ID: '+d[0].id.substring(0,8).toUpperCase();
+      cp=TOTAL_PAGES;showPage(TOTAL_PAGES);
+    }else{
+      alert('Gabim gjatë dërgimit: '+(d.message||JSON.stringify(d)));
+      bn.disabled=false;bn.textContent='✓ Dërgo JHA';
+    }
+  }catch(e){
+    alert('Gabim lidhje: '+e.message);
+    bn.disabled=false;bn.textContent='✓ Dërgo JHA';
+  }
 }
 
 function resetForm(){
-  cp=0;risks=[];photos=[];chks={};
-  ['ticket','adresa','verejte'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('lloji').value='';
+  cp=0;tipoSel=[];actSel=[];chks={};photos=[];ppeChked=[];
+  document.querySelectorAll('.tipo-item').forEach(el=>{el.classList.remove('sel');el.querySelector('input').checked=false;});
+  document.querySelectorAll('.act-card').forEach(c=>c.classList.remove('active-act'));
+  document.querySelectorAll('.chk-item').forEach(c=>{c.classList.remove('yes','no');c.querySelectorAll('.chk-btn').forEach(b=>b.classList.remove('apo','ajo','ana'));});
+  document.getElementById('ticket').value='';
+  document.getElementById('adresa').value='';
+  document.getElementById('klienti').value='';
   document.getElementById('supervisor').value='';
+  document.getElementById('verejte').value='';
+  document.getElementById('arsye_pezullim').value='';
   document.getElementById('thumbs').innerHTML='';
-  document.querySelectorAll('.risk-card').forEach(c=>c.classList.remove('sel'));
-  clearSig();initChks();initPPE();
-  document.getElementById('data').valueAsDate=new Date();
+  clearSig();initPPE();
+  const now=new Date();
+  document.getElementById('data').valueAsDate=now;
+  document.getElementById('ora').value=now.toTimeString().substring(0,5);
   showPage(0);updateNav();
-  const bn=document.getElementById('btn-next');bn.disabled=false;bn.textContent='Vazhdo →';bn.style.background='';
+  document.getElementById('nav-bar').style.display='flex';
+  const bn=document.getElementById('btn-next');bn.disabled=false;bn.textContent='Vazhdo →';bn.classList.remove('submit');
 }
 </script>
 </body>
