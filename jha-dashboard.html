@@ -5,114 +5,217 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JHA Dashboard — Supervisor</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--red:#e2001a;--red-l:#fff0f0;--green:#1D9E75;--green-l:#f0faf5;--amber:#d97706;--amber-l:#fffbeb;--border:#e5e7eb;--text:#111;--muted:#6b7280;--bg:#f3f4f6}
+:root{
+  --red:#e2001a;--red-l:#fff0f0;
+  --green:#1D9E75;--green-l:#f0faf5;
+  --amber:#d97706;--amber-l:#fffbeb;
+  --border:#e5e7eb;--text:#111;--muted:#6b7280;--bg:#f3f4f6;
+}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text)}
-.topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100}
+
+/* Topbar */
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
 .tl{display:flex;align-items:center;gap:14px}
 .logo{font-size:22px;font-weight:800;color:var(--red)}
-.ttitle{font-size:15px;font-weight:600}
+.ttitle{font-size:15px;font-weight:700}
 .tsub{font-size:12px;color:var(--muted)}
 .tr{display:flex;gap:8px;align-items:center}
-.ubox{font-size:13px;color:var(--muted);padding:0 10px}
-.btn{padding:7px 14px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer}
-.btn-out{border:1px solid var(--border);background:#fff;color:var(--text)}
-.btn-ref{border:1px solid var(--border);background:#fff;color:var(--text)}
+.ubox{font-size:13px;color:var(--muted);padding:0 8px;font-weight:500}
+.btn{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s}
+.btn-sec{border:1px solid var(--border);background:#fff;color:var(--text)}
+.btn-sec:hover{background:var(--bg)}
 .btn-exp{border:none;background:var(--red);color:#fff}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:24px;max-width:1200px;margin:0 auto}
-.sc{background:#fff;border-radius:12px;padding:18px;border:1px solid var(--border)}
-.slbl{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px}
-.sval{font-size:28px;font-weight:700;margin-top:6px}
-.ssub{font-size:12px;color:var(--muted);margin-top:4px}
+.btn-exp:hover{opacity:0.9}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:24px 24px 0;max-width:1300px;margin:0 auto}
+.sc{background:#fff;border-radius:12px;padding:18px 20px;border:1px solid var(--border)}
+.slbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px}
+.sval{font-size:30px;font-weight:800;margin-top:6px;line-height:1}
+.ssub{font-size:12px;color:var(--muted);margin-top:5px}
 .sv-red{color:var(--red)}.sv-green{color:var(--green)}.sv-amber{color:var(--amber)}
-.filters{padding:0 24px 16px;max-width:1200px;margin:0 auto;display:flex;gap:10px;flex-wrap:wrap}
-.fi{padding:8px 12px;border-radius:8px;border:1px solid var(--border);font-size:14px;background:#fff;outline:none}
+
+/* Filters */
+.filters{padding:16px 24px;max-width:1300px;margin:0 auto;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.fi{padding:8px 13px;border-radius:8px;border:1px solid var(--border);font-size:14px;background:#fff;outline:none;transition:border-color 0.15s;color:var(--text)}
 .fi:focus{border-color:var(--red)}
-.tw{padding:0 24px 24px;max-width:1200px;margin:0 auto}
-.tc{background:#fff;border-radius:12px;border:1px solid var(--border);overflow:hidden}
+.fi-search{min-width:220px}
+.results-count{font-size:13px;color:var(--muted);margin-left:auto}
+
+/* Table */
+.tw{padding:0 24px 32px;max-width:1300px;margin:0 auto}
+.tc{background:#fff;border-radius:12px;border:1px solid var(--border);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
 table{width:100%;border-collapse:collapse}
-th{padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);background:#fafafa}
+th{padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border);background:#fafafa;white-space:nowrap}
 td{padding:12px 16px;font-size:14px;border-bottom:1px solid var(--border);vertical-align:middle}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:#fafafa}
+tr:hover td{background:#fafafa;cursor:pointer}
 .badge{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
-.bg{background:var(--green-l);color:var(--green)}.br{background:var(--red-l);color:var(--red)}.ba{background:var(--amber-l);color:var(--amber)}
-.chip{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;background:var(--red-l);color:var(--red);margin:2px}
-.bv{padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;border:1px solid var(--border);background:#fff;cursor:pointer}
-.empty{text-align:center;padding:48px;color:var(--muted);font-size:14px}
-.loading{text-align:center;padding:48px;color:var(--muted)}
-.spin{display:inline-block;width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:sp 0.8s linear infinite;margin-bottom:12px}
+.bg{background:var(--green-l);color:var(--green)}
+.br{background:var(--red-l);color:var(--red)}
+.ba{background:var(--amber-l);color:var(--amber)}
+.chip{display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;background:var(--red-l);color:var(--red);margin:2px 2px 2px 0}
+.chip-green{background:var(--green-l);color:var(--green)}
+.act-chip{background:#f0f4ff;color:#4f46e5}
+.bv{padding:5px 13px;border-radius:7px;font-size:12px;font-weight:700;border:1px solid var(--border);background:#fff;cursor:pointer;transition:all 0.15s;white-space:nowrap}
+.bv:hover{background:var(--red);color:#fff;border-color:var(--red)}
+.empty{text-align:center;padding:56px;color:var(--muted);font-size:14px}
+.loading-row{text-align:center;padding:48px;color:var(--muted)}
+.spin{display:inline-block;width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:sp 0.8s linear infinite;margin-bottom:10px}
 @keyframes sp{to{transform:rotate(360deg)}}
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;padding:20px}
+
+/* Modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto}
 .modal-bg.open{display:flex}
-.modal{background:#fff;border-radius:16px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto}
-.mh{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff}
-.mt{font-size:17px;font-weight:700}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:760px;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+.mh{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:16px 16px 0 0}
+.mt{font-size:17px;font-weight:800}
+.mh-actions{display:flex;gap:8px;align-items:center}
+.btn-pdf{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;border:none;background:var(--red);color:#fff;cursor:pointer}
 .mc{width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
 .mb{padding:24px}
-.ds{margin-bottom:20px}
-.dst{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
-.dr{display:flex;justify-content:space-between;padding:6px 0;font-size:14px;border-bottom:1px solid #f5f5f5}
-.dr:last-child{border-bottom:none}
-.dk{color:var(--muted)}.dv{font-weight:500;text-align:right;max-width:60%}
-.sig-img{border:1px solid var(--border);border-radius:8px;max-width:100%}
-.pg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
-.pg img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px}
-.cr{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:13px;border-bottom:1px solid #f9f9f9}
-.cr:last-child{border-bottom:none}
-.loading-scr{position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:999}
-@media(max-width:768px){.stats{grid-template-columns:1fr 1fr}.tsub{display:none}th:nth-child(3),td:nth-child(3),th:nth-child(4),td:nth-child(4){display:none}}
+
+/* Modal content */
+.ms{margin-bottom:20px}
+.ms-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:6px}
+.ms-icon{font-size:14px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.dr{display:flex;flex-direction:column;padding:8px 12px;border-bottom:1px solid #f0f0f0;border-right:1px solid #f0f0f0}
+.dr:nth-child(even){border-right:none}
+.dr:nth-last-child(-n+2){border-bottom:none}
+.dk{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px}
+.dv{font-size:14px;font-weight:600;color:var(--text)}
+.info-grid-wrap{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:0}
+
+/* Activities in modal */
+.act-modal{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:8px}
+.act-modal-hdr{padding:10px 14px;background:#fafafa;display:flex;align-items:center;justify-content:space-between}
+.act-modal-title{font-size:14px;font-weight:700}
+.act-modal-body{padding:10px 14px;border-top:1px solid var(--border)}
+.chk-row{display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;font-size:13px;border-bottom:1px solid #f5f5f5;gap:12px}
+.chk-row:last-child{border-bottom:none}
+.chk-row-q{flex:1;color:var(--text);line-height:1.4}
+.chk-row-v{font-weight:700;white-space:nowrap;flex-shrink:0}
+
+/* PPE chips */
+.ppe-chips{display:flex;flex-wrap:wrap;gap:6px}
+.ppe-chip{padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;background:var(--green-l);color:var(--green)}
+
+/* Photos */
+.pg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.pg img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer;transition:transform 0.15s}
+.pg img:hover{transform:scale(1.03)}
+
+/* Signature */
+.sig-img{border:1px solid var(--border);border-radius:8px;max-width:100%;max-height:100px}
+
+/* Alert */
+.alert-modal{background:#fff8e1;border:1.5px solid #d97706;border-radius:10px;padding:12px 14px}
+.alert-modal-title{font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;margin-bottom:5px}
+.alert-modal-text{font-size:13px;color:#78350f;line-height:1.5}
+
+/* Loading screen */
+.lscr{position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:999}
+
+@media(max-width:900px){
+  .stats{grid-template-columns:1fr 1fr}
+  .tsub{display:none}
+  th:nth-child(4),td:nth-child(4){display:none}
+  .info-grid{grid-template-columns:1fr}
+  .dr:nth-child(even){border-right:none}
+  .dr:nth-last-child(-n+2){border-bottom:1px solid #f0f0f0}
+  .dr:last-child{border-bottom:none}
+  .pg{grid-template-columns:repeat(3,1fr)}
+}
 </style>
 </head>
 <body>
-<div class="loading-scr" id="lscr"><div class="spin"></div><div style="font-size:14px;color:var(--muted)">Duke kontrolluar hyrjen...</div></div>
+
+<div class="lscr" id="lscr">
+  <div class="spin"></div>
+  <div style="font-size:13px;color:var(--muted)">Duke kontrolluar hyrjen...</div>
+</div>
 
 <div id="main" style="display:none">
+
 <div class="topbar">
-  <div class="tl"><div class="logo">ADC</div><div><div class="ttitle">JHA Dashboard</div><div class="tsub">Supervisor View</div></div></div>
+  <div class="tl">
+    <div class="logo">ADC</div>
+    <div>
+      <div class="ttitle">JHA Dashboard</div>
+      <div class="tsub">Supervisor · rev03</div>
+    </div>
+  </div>
   <div class="tr">
     <div class="ubox" id="ubox">—</div>
-    <button class="btn btn-ref" onclick="loadData()">↻ Rifresko</button>
+    <button class="btn btn-sec" onclick="loadData()">↻ Rifresko</button>
     <button class="btn btn-exp" onclick="exportCSV()">↓ CSV</button>
-    <button class="btn btn-out" onclick="doLogout()">Dil</button>
+    <button class="btn btn-sec" onclick="doLogout()">Dil</button>
   </div>
 </div>
 
 <div class="stats">
-  <div class="sc"><div class="slbl">Totali Sot</div><div class="sval" id="st0">—</div><div class="ssub">forma sot</div></div>
+  <div class="sc"><div class="slbl">Totali Sot</div><div class="sval" id="st0">—</div><div class="ssub">forma të dërguara</div></div>
   <div class="sc"><div class="slbl">Këtë Javë</div><div class="sval" id="st1">—</div><div class="ssub">forma javore</div></div>
   <div class="sc"><div class="slbl">Me Probleme</div><div class="sval sv-red" id="st2">—</div><div class="ssub">kontroll "Jo"</div></div>
-  <div class="sc"><div class="slbl">Totali</div><div class="sval sv-green" id="st3">—</div><div class="ssub">të gjitha</div></div>
+  <div class="sc"><div class="slbl">Totali</div><div class="sval sv-green" id="st3">—</div><div class="ssub">të gjitha format</div></div>
 </div>
 
 <div class="filters">
-  <input class="fi" type="text" id="fe" placeholder="🔍 Kërko punonjës..." oninput="filterT()">
+  <input class="fi fi-search" type="text" id="fe" placeholder="🔍 Kërko punonjës, ticket..." oninput="filterT()">
   <input class="fi" type="date" id="fd" oninput="filterT()">
-  <select class="fi" id="fr" onchange="filterT()">
-    <option value="">Të gjitha rreziqet</option>
-    <option value="lartesia">Punë në Lartësi</option>
-    <option value="elektrike">Rrezik Elektrik</option>
-    <option value="renie_obj">Rënie Objektesh</option>
-    <option value="zjar">Zjarr</option>
-    <option value="hapesira">Hapësira të Kufizuara</option>
-    <option value="trafiku">Trafik Rrugor</option>
+  <select class="fi" id="fst" onchange="filterT()">
+    <option value="">Të gjitha statuset</option>
+    <option value="ok">✓ OK</option>
+    <option value="problem">⚠ Probleme</option>
+    <option value="pezullim">🚫 Pezullim</option>
   </select>
+  <select class="fi" id="flloji" onchange="filterT()">
+    <option value="">Të gjitha llojet</option>
+    <option value="instalim_ri">Instalim i Ri</option>
+    <option value="suport">Suport</option>
+    <option value="migrim">Migrim</option>
+    <option value="kulle">Punime në Kullë</option>
+  </select>
+  <div class="results-count" id="rcount"></div>
 </div>
 
-<div class="tw"><div class="tc">
-  <table><thead><tr>
-    <th>Punonjësi</th><th>Ticket</th><th>Lloji i Punës</th>
-    <th>Rreziqet</th><th>Statusi</th><th>Data / Ora</th><th></th>
-  </tr></thead>
-  <tbody id="tbody"><tr><td colspan="7"><div class="loading"><div class="spin"></div><br>Duke ngarkuar...</div></td></tr></tbody>
-  </table>
-</div></div>
+<div class="tw">
+  <div class="tc">
+    <table>
+      <thead>
+        <tr>
+          <th>Punonjësi</th>
+          <th>Ticket / Klienti</th>
+          <th>Lloji i Punës</th>
+          <th>Adresa</th>
+          <th>Statusi</th>
+          <th>Data & Ora</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="7"><div class="loading-row"><div class="spin"></div><br>Duke ngarkuar...</div></td></tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
-<div class="modal-bg" id="modal">
+</div><!-- /main -->
+
+<!-- MODAL -->
+<div class="modal-bg" id="modal" onclick="bgClose(event)">
   <div class="modal">
-    <div class="mh"><div class="mt" id="mtitle">Detajet</div><button class="mc" onclick="closeM()">×</button></div>
+    <div class="mh">
+      <div class="mt" id="mtitle">Detajet e Formës JHA</div>
+      <div class="mh-actions">
+        <button class="btn-pdf" onclick="exportPDF()">📄 Shkarko PDF</button>
+        <button class="mc" onclick="closeM()">×</button>
+      </div>
+    </div>
     <div class="mb" id="mbody"></div>
   </div>
 </div>
@@ -123,11 +226,25 @@ const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI
 const {createClient}=supabase;
 const sb=createClient(SURL,SKEY);
 
-const RL={lartesia:'Lartësi',elektrike:'Elektrik',renie_obj:'Rënie',zjar:'Zjarr',pesash:'Pesash',trafiku:'Trafik',hapesira:'Hapësira',kimike:'Kimike'};
-const CL={q1:'Min. 2 punonjës',q2:'Pajisje certifikuara',q3:'Personel trajnuar',q4:'PMI OK',q5:'Detektor gazi',q6:'Rrugë dalje',q7:'Procedurat emergjence',q8:'Shkallë siguruar',q9:'Distanca rrjeti'};
+let allData=[], currentRecord=null;
 
-let allData=[];
+// Activity definitions for display
+const ACTS={
+  act1:{title:'1. Kushtet Atmosferike',qs:{a1q1:'A jeni të informuar për ndalimin e punimeve jashtë nën kushte atmosferike të papërshtatshme?',a1q2:'A janë kushtet atmosferike të përshtatshme për punë të sigurtë?'}},
+  act2:{title:'2. Drejtimi i Mjetit',qs:{a2q1:'A është kontrolluar mjeti i punës?',a2q2:'A është personeli i autorizuar që të drejtojë mjetin?',a2q3:'A është mjeti pajisur me fikse zjarri / kuti ndihmës?',a2q4:'A është stafi trajnuar mbi Drejtimin e Sigurtë dhe Tolerancën Zero?'}},
+  act3:{title:'3. Punime në Lartësi — Shkallë/Fasadë/Terrace',qs:{a3q1:'A është shkalla standart EN 131, e kontrolluar dhe pa difekte?',a3q2:'A janë të trajnuar punonjësit për punime mbi shkallë mbi 2m?',a3q3:'A janë të pajisur me shkallë dielektrike dhe pajisje mbrojtëse ndaj rënies?',a3q4:'A është kontrolluar vendi i punës për vendosjen e shkallës?',a3q5:'A është i rrethuar vendi i punës me sinjalistikën e duhur?'}},
+  act4:{title:'4. Punime me Pajisje Manuale Elektrike',qs:{a4q1:'A jeni të autorizuar dhe trajnuar (Cert. Sigurimit Teknik Elektrik)?',a4q2:'A është shkëputur paisja / instalimi nga tensioni?',a4q3:'A keni veshur PMI që ju mbrojnë nga kontakti elektrik?',a4q4:'A keni dijeni mbi procedurën për punë me paisjet elektrike?',a4q5:'A ka tokëzim paisja / Instalimi elektrik?',a4q6:'A janë të kontrolluara pajisjet (të izoluara nga kontakti)?',a4q7:'Keni detektues të tensionit (Indikator pa kontakt)?',a4q8:'Fikse zjarri / kuti e ndihmës së shpejtë?'}},
+  act5:{title:'5. Punime pranë Instalimeve & Pajisjeve Elektrike',qs:{a5q1:'A jeni të trajnuar (Cert. Sigurimit Teknik Elektrik)?',a5q2:'A jeni të pajisur me PMI / Helmetat, këpucët, doreza, indikator?',a5q3:'A është distanca nga linja elektrike e sigurtë (≤1kV:1.5/2m; >10kV:3/5m)?',a5q4:'A janë shkallët jopërcjellëse EN 131 prezente?',a5q5:'I keni detektorët e prezencës së tensionit / indikatorët pa kontakt?'}},
+  act6:{title:'6. Punë në Pus Teknik / Parking / Cati',qs:{a6q1:'A mund të kryhet puna e sigurtë (barriera, parmake, skare mbrojtëse)?',a6q2:'A punohet në grup minimumi 2 punëtorë?',a6q3:'A janë marrë masa për mbrojtje ndaj rënies nga lartësia?',a6q4:'Është rrethuar puseta e hapur me kone / shirit / tabela?',a6q5:'A keni kryer testimet e duhura për prezencë tensioni?'}},
+  act7:{title:'7. Ngritja / Transporti Manual i Peshave',qs:{a7q1:'A jeni të trajnuar për ngritjen manuale me forcën e krahut?',a7q2:'Ngritja të bëhet me 2+ punëtorë kur pesha >25kg?',a7q3:'Ka paisje të përshtatshme për ngritjen e kapakeve (levë, gancë)?'}},
+  act8:{title:'8. Ngjitja në Kullë',qs:{a8q1:'A është i trajnuar dhe certifikuar personeli për punë në kullë?',a8q2:'A janë kontrolluar pajisjet mbrojtëse (rripa, aksesorë) — pa dëmtime?',a8q3:'A keni PMI të tjera të veshura (kaska, këpucë, doreza)?',a8q4:'Ka pikë ankorimi (fiksimi) të përshtatshme?',a8q5:'Janë shkallët vertikale të kontrolluara?',a8q6:'Ka çantë për veglat / vend për lidhjen e veglave?'}},
+  act9:{title:'9. Punime në Hapësira të Kufizuara',qs:{a9q1:'Personeli është i trajnuar dhe certifikuar?',a9q2:'Janë pajisjet e punës të kontrolluara dhe funksionale?',a9q3:'Janë PMI në dispozicion (përfshire maskat)?',a9q4:'Ka detektor gazi (O₂/H₂S/CO) prezent dhe funksional?',a9q5:'Ka person që bën mbikëqyrjen në hyrje të hapësirës?',a9q6:'Keni njohuri për procedurën e hyrjes dhe emergjencës? (tripod, rripa)?',a9q7:'Rrethoni zonën e punës.'}},
+  act10:{title:'10. Komunikimi me Klientin',qs:{a10q1:'A keni vështirësi të komunikoni me klientin (agresivitet, nervozizëm)?',a10q2:'A ndiheni të ofenduar/kërcënuar kur operoni në ambientet e klientit?'}},
+};
 
+const TIPO_LABELS={instalim_ri:'Instalim i Ri',suport:'Suport',migrim:'Migrim',kulle:'Punime në Kullë'};
+
+// Auth
 sb.auth.getSession().then(async({data:{session}})=>{
   if(!session){window.location.href='login.html';return;}
   const {data:p}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
@@ -141,103 +258,346 @@ sb.auth.getSession().then(async({data:{session}})=>{
 async function doLogout(){await sb.auth.signOut();window.location.href='login.html';}
 
 async function loadData(){
+  document.getElementById('tbody').innerHTML='<tr><td colspan="7"><div class="loading-row"><div class="spin"></div><br>Duke ngarkuar...</div></td></tr>';
   const {data:{session}}=await sb.auth.getSession();
   const res=await fetch(`${SURL}/rest/v1/jha_submissions?select=*&order=created_at.desc&limit=500`,{
     headers:{'apikey':SKEY,'Authorization':'Bearer '+session.access_token}
   });
   allData=await res.json();
-  updateStats();renderT(allData);
+  if(!Array.isArray(allData))allData=[];
+  updateStats();filterT();
+}
+
+function getSt(r){
+  const v=Object.values(r.kontrollet||{});
+  if(r.arsye_pezullim)return{l:'Pezullim',c:'br',key:'pezullim'};
+  if(v.includes('jo'))return{l:'Probleme',c:'br',key:'problem'};
+  if(!v.length)return{l:'Pa kontrolle',c:'ba',key:''};
+  return{l:'OK',c:'bg',key:'ok'};
 }
 
 function updateStats(){
   const now=new Date(),tod=now.toDateString(),wk=new Date(now-7*86400000);
   document.getElementById('st0').textContent=allData.filter(r=>new Date(r.created_at).toDateString()===tod).length;
   document.getElementById('st1').textContent=allData.filter(r=>new Date(r.created_at)>=wk).length;
-  document.getElementById('st2').textContent=allData.filter(r=>Object.values(r.kontrollet||{}).includes('jo')).length;
+  document.getElementById('st2').textContent=allData.filter(r=>Object.values(r.kontrollet||{}).includes('jo')||r.arsye_pezullim).length;
   document.getElementById('st3').textContent=allData.length;
 }
 
-function getSt(r){
-  const v=Object.values(r.kontrollet||{});
-  if(v.includes('jo'))return{l:'Probleme',c:'br'};
-  if(!v.length)return{l:'Pa kontrolle',c:'ba'};
-  return{l:'OK',c:'bg'};
+function fmtDT(d){
+  const dt=new Date(d);
+  return dt.toLocaleDateString('sq-AL',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+dt.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
 }
-
-function fmtD(d){const dt=new Date(d);return dt.toLocaleDateString('sq-AL',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+dt.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});}
-
-function renderT(data){
-  const tb=document.getElementById('tbody');
-  if(!data.length){tb.innerHTML='<tr><td colspan="7"><div class="empty">Nuk u gjetën forma.</div></td></tr>';return;}
-  tb.innerHTML=data.map(r=>{
-    const chips=(r.rreziqet||[]).map(k=>`<span class="chip">${RL[k]||k}</span>`).join('');
-    const st=getSt(r);
-    return `<tr>
-      <td><strong>${r.emri||r.user_fullname||'—'}</strong><br><span style="font-size:12px;color:var(--muted)">${r.supervisor||''}</span></td>
-      <td><span style="font-family:monospace;font-size:13px">${r.ticket||'—'}</span></td>
-      <td style="font-size:13px">${r.lloji||'—'}</td>
-      <td>${chips||'<span style="color:#ccc;font-size:13px">—</span>'}</td>
-      <td><span class="badge ${st.c}">${st.l}</span></td>
-      <td style="font-size:12px;color:var(--muted);white-space:nowrap">${fmtD(r.created_at)}</td>
-      <td><button class="bv" onclick="showD('${r.id}')">Shiko</button></td>
-    </tr>`;
-  }).join('');
-}
+function fmtD(d){const dt=new Date(d);return dt.toLocaleDateString('sq-AL',{day:'2-digit',month:'2-digit',year:'numeric'});}
 
 function filterT(){
   const e=document.getElementById('fe').value.toLowerCase();
   const d=document.getElementById('fd').value;
-  const rk=document.getElementById('fr').value;
-  renderT(allData.filter(r=>{
-    if(e&&!(r.emri||r.user_fullname||'').toLowerCase().includes(e))return false;
+  const st=document.getElementById('fst').value;
+  const ll=document.getElementById('flloji').value;
+  const filtered=allData.filter(r=>{
+    if(e&&!((r.emri||r.user_fullname||'').toLowerCase().includes(e)||(r.ticket||'').toLowerCase().includes(e)||(r.klienti||'').toLowerCase().includes(e)))return false;
     if(d&&!r.created_at.startsWith(d))return false;
-    if(rk&&!(r.rreziqet||[]).includes(rk))return false;
+    if(st&&getSt(r).key!==st)return false;
+    if(ll&&!(r.lloji||'').includes(ll))return false;
     return true;
-  }));
+  });
+  document.getElementById('rcount').textContent=`${filtered.length} rezultate`;
+  renderT(filtered);
+}
+
+function renderT(data){
+  const tb=document.getElementById('tbody');
+  if(!data.length){tb.innerHTML='<tr><td colspan="7"><div class="empty">📋 Nuk u gjetën forma.</div></td></tr>';return;}
+  tb.innerHTML=data.map(r=>{
+    const st=getSt(r);
+    const tipos=(r.lloji||'').split(',').map(t=>t.trim()).filter(Boolean).map(t=>`<span class="chip act-chip">${TIPO_LABELS[t]||t}</span>`).join('');
+    const dt=new Date(r.created_at);
+    const timeStr=dt.toLocaleDateString('sq-AL',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+dt.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
+    return `<tr onclick="showD('${r.id}')">
+      <td><strong>${r.emri||r.user_fullname||'—'}</strong><br><span style="font-size:12px;color:var(--muted)">${r.supervisor||''}</span></td>
+      <td><span style="font-family:monospace;font-size:13px;font-weight:600">${r.ticket||'—'}</span>${r.klienti?`<br><span style="font-size:12px;color:var(--muted)">${r.klienti}</span>`:''}</td>
+      <td>${tipos||'<span style="color:#ccc">—</span>'}</td>
+      <td style="font-size:13px;color:var(--muted)">${r.adresa||'—'}</td>
+      <td><span class="badge ${st.c}">${st.l}</span></td>
+      <td style="font-size:12px;color:var(--muted);white-space:nowrap">${timeStr}</td>
+      <td><button class="bv" onclick="event.stopPropagation();showD('${r.id}')">Shiko →</button></td>
+    </tr>`;
+  }).join('');
 }
 
 function showD(id){
-  const r=allData.find(x=>x.id===id);if(!r)return;
-  document.getElementById('mtitle').textContent=`${r.emri||'—'} — ${r.ticket||'—'}`;
-  const c=r.kontrollet||{},st=getSt(r);
-  const pmi=(r.pmi||[]).join(', ')||'—';
+  const r=allData.find(x=>x.id===id);
+  if(!r)return;
+  currentRecord=r;
+  const st=getSt(r);
+  const c=r.kontrollet||{};
+  const dt=new Date(r.created_at);
+  const timeDisplay=dt.toLocaleDateString('sq-AL',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+dt.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
+  const tipos=(r.lloji||'').split(',').map(t=>t.trim()).filter(Boolean).map(t=>TIPO_LABELS[t]||t).join(', ')||'—';
+  const pmi=r.pmi||[];
   const photos=(r.foto_urls||[]).filter(Boolean);
+
+  // Build aktivitete section
+  const actKeys=r.rreziqet||[];
+  let actsHtml='';
+  if(actKeys.length>0){
+    actsHtml=actKeys.map(ak=>{
+      const actDef=ACTS[ak];if(!actDef)return'';
+      const qRows=Object.entries(actDef.qs).map(([qk,qlbl])=>{
+        const v=c[qk];
+        const col=v==='po'?'var(--green)':v==='jo'?'var(--red)':v==='na'?'#888':'#ccc';
+        const lbl=v==='po'?'✓ Po':v==='jo'?'✗ Jo':v==='na'?'N/A':'—';
+        return `<div class="chk-row"><div class="chk-row-q">${qlbl}</div><div class="chk-row-v" style="color:${col}">${lbl}</div></div>`;
+      }).join('');
+      const hasJo=Object.keys(actDef.qs).some(qk=>c[qk]==='jo');
+      return `<div class="act-modal">
+        <div class="act-modal-hdr">
+          <div class="act-modal-title">${actDef.title}</div>
+          ${hasJo?'<span class="badge br" style="font-size:11px">⚠ Probleme</span>':'<span class="badge bg" style="font-size:11px">✓ OK</span>'}
+        </div>
+        <div class="act-modal-body">${qRows}</div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('mtitle').textContent=`${r.emri||'—'} — ${r.ticket||'JHA'}`;
   document.getElementById('mbody').innerHTML=`
-    <div class="ds"><div class="dst">Informacion i Përgjithshëm</div>
-      <div class="dr"><span class="dk">Punonjësi</span><span class="dv">${r.emri||'—'}</span></div>
-      <div class="dr"><span class="dk">Ticket</span><span class="dv" style="font-family:monospace">${r.ticket||'—'}</span></div>
-      <div class="dr"><span class="dk">Adresa</span><span class="dv">${r.adresa||'—'}</span></div>
-      <div class="dr"><span class="dk">Lloji</span><span class="dv">${r.lloji||'—'}</span></div>
-      <div class="dr"><span class="dk">Supervisor</span><span class="dv">${r.supervisor||'—'}</span></div>
-      <div class="dr"><span class="dk">Data</span><span class="dv">${fmtD(r.created_at)}</span></div>
-      <div class="dr"><span class="dk">Statusi</span><span class="dv"><span class="badge ${st.c}">${st.l}</span></span></div>
+    <div class="ms">
+      <div class="ms-title"><span class="ms-icon">📋</span> Informacion i Përgjithshëm</div>
+      <div class="info-grid-wrap">
+        <div class="info-grid">
+          <div class="dr"><div class="dk">Punonjësi</div><div class="dv">${r.emri||r.user_fullname||'—'}</div></div>
+          <div class="dr"><div class="dk">Supervisor</div><div class="dv">${r.supervisor||'—'}</div></div>
+          <div class="dr"><div class="dk">Data & Ora</div><div class="dv">${timeDisplay}</div></div>
+          <div class="dr"><div class="dk">Nr. Ticket</div><div class="dv" style="font-family:monospace">${r.ticket||'—'}</div></div>
+          <div class="dr"><div class="dk">Adresa</div><div class="dv">${r.adresa||'—'}</div></div>
+          <div class="dr"><div class="dk">Klienti</div><div class="dv">${r.klienti||'—'}</div></div>
+          <div class="dr"><div class="dk">Lloji i Punës</div><div class="dv">${tipos}</div></div>
+          <div class="dr"><div class="dk">Statusi</div><div class="dv"><span class="badge ${st.c}">${st.l}</span></div></div>
+        </div>
+      </div>
     </div>
-    <div class="ds"><div class="dst">Rreziqet</div>
-      ${(r.rreziqet||[]).length?(r.rreziqet.map(k=>`<span class="chip" style="margin:3px">${RL[k]||k}</span>`).join('')):'<span style="color:var(--muted);font-size:13px">Asnjë i zgjedhur</span>'}
-    </div>
-    <div class="ds"><div class="dst">Kontrollet e Sigurisë</div>
-      ${Object.keys(CL).map(k=>{const v=c[k];const col=v==='po'?'var(--green)':v==='jo'?'var(--red)':'var(--muted)';const lb=v==='po'?'✓ Po':v==='jo'?'✗ Jo':v==='na'?'N/A':'—';return`<div class="cr"><span>${CL[k]}</span><span style="font-weight:600;color:${col}">${lb}</span></div>`;}).join('')}
-    </div>
-    ${r.verejte?`<div class="ds"><div class="dst">Vërejtje</div><p style="font-size:14px;line-height:1.5">${r.verejte}</p></div>`:''}
-    <div class="ds"><div class="dst">PMI të Veshura</div><p style="font-size:13px;line-height:1.6">${pmi}</p></div>
-    ${photos.length?`<div class="ds"><div class="dst">Foto (${photos.length})</div><div class="pg">${photos.map(p=>`<img src="${p}" loading="lazy">`).join('')}</div></div>`:''}
-    ${r.signature?`<div class="ds"><div class="dst">Nënshkrim</div><img src="${r.signature}" class="sig-img"></div>`:''}
+
+    ${actKeys.length?`<div class="ms">
+      <div class="ms-title"><span class="ms-icon">✅</span> Aktivitetet & Kontrollet (${actKeys.length} aktive)</div>
+      ${actsHtml}
+    </div>`:''}
+
+    ${pmi.length?`<div class="ms">
+      <div class="ms-title"><span class="ms-icon">🦺</span> Paisjet Mbrojtëse Individuale (${pmi.length})</div>
+      <div class="ppe-chips">${pmi.map(p=>`<span class="ppe-chip">${p}</span>`).join('')}</div>
+    </div>`:''}
+
+    ${r.verejte?`<div class="ms">
+      <div class="ms-title"><span class="ms-icon">📝</span> Vërejtje & Masa Shtesë</div>
+      <p style="font-size:14px;line-height:1.6;color:var(--text)">${r.verejte}</p>
+    </div>`:''}
+
+    ${r.arsye_pezullim?`<div class="ms">
+      <div class="ms-title"><span class="ms-icon">🚫</span> Arsyeja e Pezullimit</div>
+      <div class="alert-modal">
+        <div class="alert-modal-title">⚠️ Puna u Pezullua</div>
+        <div class="alert-modal-text">${r.arsye_pezullim}</div>
+      </div>
+    </div>`:''}
+
+    ${photos.length?`<div class="ms">
+      <div class="ms-title"><span class="ms-icon">📷</span> Foto nga Terreni (${photos.length})</div>
+      <div class="pg">${photos.map(p=>`<img src="${p}" loading="lazy" onclick="window.open('${p}','_blank')">`).join('')}</div>
+    </div>`:''}
+
+    ${r.signature?`<div class="ms">
+      <div class="ms-title"><span class="ms-icon">✍️</span> Nënshkrim Dixhital</div>
+      <img src="${r.signature}" class="sig-img">
+    </div>`:''}
   `;
   document.getElementById('modal').classList.add('open');
 }
 
-function closeM(){document.getElementById('modal').classList.remove('open');}
-document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeM();});
+function closeM(){document.getElementById('modal').classList.remove('open');currentRecord=null;}
+function bgClose(e){if(e.target.id==='modal')closeM();}
 
+// PDF Export
+async function exportPDF(){
+  if(!currentRecord){alert('Asnjë formë e zgjedhur!');return;}
+  const r=currentRecord;
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210,M=14,CW=W-M*2;
+  let y=14;
+
+  // Colors
+  const RED=[226,0,26],DARK=[20,20,20],GRAY=[100,100,100],LGRAY=[240,240,240],WHITE=[255,255,255],GREEN=[29,158,117],AMBER=[217,119,6];
+
+  function line(x1,y1,x2,y2,color=[220,220,220],w=0.3){doc.setDrawColor(...color);doc.setLineWidth(w);doc.line(x1,y1,x2,y2);}
+  function rect(x,yy,w,h,fill,stroke){
+    if(fill){doc.setFillColor(...fill);doc.rect(x,yy,w,h,'F');}
+    if(stroke){doc.setDrawColor(...stroke);doc.setLineWidth(0.3);doc.rect(x,yy,w,h,'S');}
+  }
+  function txt(text,x,yy,size=9,color=DARK,bold=false,align='left'){
+    doc.setFontSize(size);doc.setTextColor(...color);
+    doc.setFont('helvetica',bold?'bold':'normal');
+    doc.text(String(text||'—'),x,yy,{align});
+  }
+  function checkNewPage(needed=20){if(y+needed>285){doc.addPage();y=14;}}
+
+  // ─── HEADER ───
+  rect(M,y,CW,18,DARK);
+  txt('ADC',M+3,y+7,14,RED,true);
+  txt('Albanian Development Company',M+3,y+13,6,[180,180,180]);
+  txt('VLRESIMI I RISKUT NE VENDIN E PUNES',W/2,y+7,13,WHITE,true,'center');
+  txt('SPOT JHA · ADCFTTX-HSM-RA-TE-rev03',W/2,y+13,7,[200,200,200],false,'center');
+  txt('Ref: POS_ADCFTTX-RAMS-HSM-ST-10001',W-M-2,y+5,6,[180,180,180],'right');
+  txt('Data: '+new Date(r.created_at).toLocaleDateString('sq-AL'),W-M-2,y+11,7,WHITE,false,'right');
+  y+=22;
+
+  // ─── INFO GRID ───
+  const infoRows=[
+    ['Punonjësi',r.emri||r.user_fullname||'—','Supervisor',r.supervisor||'—'],
+    ['Data & Ora',new Date(r.created_at).toLocaleString('sq-AL'),'Nr. Ticket',r.ticket||'—'],
+    ['Adresa',r.adresa||'—','Klienti',r.klienti||'—'],
+    ['Lloji i Punës',(r.lloji||'').split(',').map(t=>t.trim()).filter(Boolean).map(t=>({instalim_ri:'Instalim i Ri',suport:'Suport',migrim:'Migrim',kulle:'Punime në Kullë'})[t]||t).join(', ')||'—','Statusi',getSt(r).l],
+  ];
+  rect(M,y,CW,6,LGRAY);
+  txt('INFORMACION I PERGJITHSHEM',M+2,y+4,8,DARK,true);
+  y+=6;
+  infoRows.forEach(row=>{
+    rect(M,y,CW,7,[250,250,250],[220,220,220]);
+    line(M,y,M+CW,y,[220,220,220]);
+    const hw=CW/2;
+    txt(row[0],M+2,y+5,7,GRAY,true);
+    txt(String(row[1]).substring(0,35),M+22,y+5,8,DARK);
+    line(M+hw,y,M+hw,y+7,[220,220,220]);
+    txt(row[2],M+hw+2,y+5,7,GRAY,true);
+    txt(String(row[3]).substring(0,35),M+hw+22,y+5,8,DARK);
+    y+=7;
+  });
+  y+=4;
+
+  // ─── AKTIVITETET ───
+  const actKeys=r.rreziqet||[];
+  const c=r.kontrollet||{};
+
+  if(actKeys.length>0){
+    checkNewPage(15);
+    rect(M,y,CW,6,DARK);
+    txt('AKTIVITETET DHE KONTROLLET E SIGURISE',M+2,y+4,8,WHITE,true);
+    y+=8;
+
+    actKeys.forEach(ak=>{
+      const actDef=ACTS[ak];if(!actDef)return;
+      const qs=Object.entries(actDef.qs);
+      const hasJo=qs.some(([qk])=>c[qk]==='jo');
+      const needed=8+qs.length*7+4;
+      checkNewPage(needed);
+
+      // Act header
+      const hColor=hasJo?[255,245,245]:[245,252,248];
+      const hBorder=hasJo?RED:GREEN;
+      rect(M,y,CW,7,hColor,[...hBorder,0.5]);
+      txt(actDef.title,M+3,y+5,8,DARK,true);
+      txt(hasJo?'⚠ PROBLEME':'✓ OK',M+CW-3,y+5,8,hasJo?RED:GREEN,true,'right');
+      y+=7;
+
+      // Questions
+      qs.forEach(([qk,qlbl],qi)=>{
+        checkNewPage(8);
+        const v=c[qk];
+        const bg=qi%2===0?[252,252,252]:WHITE;
+        rect(M,y,CW,7,bg);
+        line(M,y,M+CW,y,[230,230,230]);
+        // Q number
+        txt(String(qi+1)+'.',M+2,y+5,7,GRAY,true);
+        // Q text - truncate if needed
+        const qshort=qlbl.length>85?qlbl.substring(0,82)+'...':qlbl;
+        txt(qshort,M+8,y+5,7,DARK);
+        // Answer
+        const vCol=v==='po'?GREEN:v==='jo'?RED:v==='na'?[120,120,120]:[180,180,180];
+        const vLbl=v==='po'?'✓ Po':v==='jo'?'✗ Jo':v==='na'?'N/A':'—';
+        txt(vLbl,M+CW-2,y+5,8,vCol,true,'right');
+        y+=7;
+      });
+      line(M,y,M+CW,y,[200,200,200],0.5);
+      y+=5;
+    });
+  }
+
+  // ─── PMI ───
+  if((r.pmi||[]).length>0){
+    checkNewPage(20);
+    rect(M,y,CW,6,LGRAY);
+    txt('PAISJET MBROJTESE INDIVIDUALE (PMI)',M+2,y+4,8,DARK,true);
+    y+=7;
+    const pmiText=r.pmi.join('  •  ');
+    const pmiLines=doc.splitTextToSize(pmiText,CW-4);
+    pmiLines.forEach(ln=>{txt(ln,M+2,y,8,DARK);y+=5;});
+    y+=3;
+  }
+
+  // ─── VEREJTE ───
+  if(r.verejte){
+    checkNewPage(20);
+    rect(M,y,CW,6,LGRAY);
+    txt('VEREJTE / MASA SHTESE',M+2,y+4,8,DARK,true);
+    y+=7;
+    const vLines=doc.splitTextToSize(r.verejte,CW-4);
+    vLines.forEach(ln=>{checkNewPage(6);txt(ln,M+2,y,8,DARK);y+=5;});
+    y+=3;
+  }
+
+  // ─── PEZULLIM ───
+  if(r.arsye_pezullim){
+    checkNewPage(25);
+    rect(M,y,CW,6,[255,200,0]);
+    txt('NE KUSHTE KUR PUNIMET NUK MUND TE KRYHEN — ARSYEJA E PEZULLIMIT',M+2,y+4,7,DARK,true);
+    y+=7;
+    rect(M,y,CW,1,[255,220,0]);y+=2;
+    const pLines=doc.splitTextToSize(r.arsye_pezullim,CW-4);
+    pLines.forEach(ln=>{checkNewPage(6);txt(ln,M+2,y,8,[120,60,0]);y+=5;});
+    y+=3;
+  }
+
+  // ─── SIGNATURE ───
+  if(r.signature){
+    checkNewPage(35);
+    rect(M,y,CW,6,LGRAY);
+    txt('NENSHKRIM DIXHITAL',M+2,y+4,8,DARK,true);
+    y+=7;
+    try{
+      doc.addImage(r.signature,'PNG',M,y,60,20);
+    }catch(e){}
+    txt(r.emri||'—',M+62,y+10,9,DARK,true);
+    txt('Punonjësi',M+62,y+15,7,GRAY);
+    y+=25;
+  }
+
+  // ─── FOOTER ───
+  const pageCount=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pageCount;i++){
+    doc.setPage(i);
+    line(M,287,W-M,287,RED,0.5);
+    txt('ADC Group · JHA rev03 · ADCFTTX-HSM-RA-TE',M,291,7,GRAY);
+    txt('Faqe '+i+' nga '+pageCount,W-M,291,7,GRAY,'right');
+    txt('Gjeneruar: '+new Date().toLocaleString('sq-AL'),W/2,291,7,GRAY,false,'center');
+  }
+
+  const fname='JHA_'+(r.emri||'worker').replace(/\s/g,'_')+'_'+(r.ticket||r.id.substring(0,8))+'.pdf';
+  doc.save(fname);
+}
+
+// CSV Export
 function exportCSV(){
-  const rows=[['ID','Emri','Email','Ticket','Adresa','Lloji','Supervisor','Rreziqet','Statusi','Data']];
+  const rows=[['ID','Emri','Email','Ticket','Klienti','Adresa','Lloji','Supervisor','Aktivitetet','Statusi','Pezullim','Data']];
   allData.forEach(r=>{
     const st=getSt(r);
-    rows.push([r.id,r.emri||r.user_fullname,r.user_email,r.ticket,r.adresa,r.lloji,r.supervisor,(r.rreziqet||[]).join(';'),st.l,fmtD(r.created_at)]);
+    rows.push([r.id,r.emri||r.user_fullname,r.user_email,r.ticket,r.klienti,r.adresa,r.lloji,r.supervisor,(r.rreziqet||[]).join(';'),st.l,r.arsye_pezullim||'',new Date(r.created_at).toLocaleString('sq-AL')]);
   });
   const csv=rows.map(r=>r.map(c=>`"${(c||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
-  a.download='JHA_'+new Date().toISOString().split('T')[0]+'.csv';a.click();
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download='JHA_Export_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
 }
 
 setInterval(loadData,60000);
