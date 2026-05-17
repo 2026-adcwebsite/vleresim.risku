@@ -521,7 +521,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 const SURL='https://klvxppajwtwxxeomvefe.supabase.co';
 const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsdnhwcGFqd3R3eHhlb212ZWZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4OTM0NTgsImV4cCI6MjA5MzQ2OTQ1OH0.QApeuRya7HiOT494qljVIKTv7XX_HSeS61tAwijbOlk';
 const {createClient}=supabase;
-const sb=createClient(SURL,SKEY);
+const sb=createClient(SURL,SKEY,{
+  auth:{
+    persistSession:true,
+    storageKey:'jha-adc-session',
+    storage:window.localStorage,
+    autoRefreshToken:true,
+    detectSessionInUrl:false
+  }
+});
 
 const TOTAL_PAGES=5;
 let cp=0,cu=null,prof=null;

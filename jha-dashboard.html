@@ -130,6 +130,42 @@ tr:hover td{background:#fafafa;cursor:pointer}
   .dr:last-child{border-bottom:none}
   .pg{grid-template-columns:repeat(3,1fr)}
 }
+
+/* Mobile card view */
+@media(max-width:640px){
+  .stats{grid-template-columns:1fr 1fr;padding:12px 12px 0;gap:10px}
+  .sc{padding:12px 14px}
+  .sval{font-size:24px}
+  .filters{padding:10px 12px;gap:8px}
+  .fi-search{min-width:100%;width:100%}
+  .tw{padding:0 12px 24px}
+  .topbar{padding:0 12px}
+  .ttitle{font-size:14px}
+  .ubox{display:none}
+  .btn{padding:6px 10px;font-size:12px}
+  
+  /* Hide table on mobile */
+  .tc table{display:none}
+  
+  /* Show cards on mobile */
+  .mobile-cards{display:flex !important;flex-direction:column;gap:10px;padding:4px 0}
+  
+  .mcard{background:#fff;border-radius:12px;border:1px solid var(--border);padding:14px;cursor:pointer;transition:box-shadow 0.15s}
+  .mcard:active{box-shadow:0 0 0 2px var(--red)}
+  .mcard-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+  .mcard-name{font-size:15px;font-weight:700;color:var(--text)}
+  .mcard-time{font-size:11px;color:var(--muted);margin-top:2px}
+  .mcard-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:13px;color:var(--muted)}
+  .mcard-row strong{color:var(--text)}
+  .mcard-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+  .mcard-btn{width:100%;margin-top:10px;padding:10px;border-radius:8px;font-size:13px;font-weight:700;border:1px solid var(--border);background:#fafafa;cursor:pointer;color:var(--text)}
+}
+
+/* Desktop - hide mobile cards */
+@media(min-width:641px){
+  .mobile-cards{display:none !important}
+}
+
 </style>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#e2001a">
@@ -208,6 +244,7 @@ tr:hover td{background:#fafafa;cursor:pointer}
       </tbody>
     </table>
   </div>
+  <div class="mobile-cards" id="mobile-cards" style="display:none"></div>
 </div>
 
 </div><!-- /main -->
@@ -230,7 +267,15 @@ tr:hover td{background:#fafafa;cursor:pointer}
 const SURL='https://klvxppajwtwxxeomvefe.supabase.co';
 const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsdnhwcGFqd3R3eHhlb212ZWZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4OTM0NTgsImV4cCI6MjA5MzQ2OTQ1OH0.QApeuRya7HiOT494qljVIKTv7XX_HSeS61tAwijbOlk';
 const {createClient}=supabase;
-const sb=createClient(SURL,SKEY);
+const sb=createClient(SURL,SKEY,{
+  auth:{
+    persistSession:true,
+    storageKey:'jha-adc-session',
+    storage:window.localStorage,
+    autoRefreshToken:true,
+    detectSessionInUrl:false
+  }
+});
 
 let allData=[], currentRecord=null;
 
@@ -320,6 +365,34 @@ function filterT(){
   });
   document.getElementById('rcount').textContent=`${filtered.length} rezultate`;
   renderT(filtered);
+}
+
+function renderMobileCards(data){
+  const mc = document.getElementById('mobile-cards');
+  if(!mc) return;
+  if(!data.length){mc.innerHTML='<div style="text-align:center;padding:32px;color:var(--muted);font-size:14px">📋 Nuk u gjetën forma.</div>';return;}
+  mc.innerHTML = data.map(r=>{
+    const st = getSt(r);
+    const dt = new Date(r.created_at);
+    const timeStr = dt.toLocaleDateString('sq-AL',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+dt.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
+    const tipoArr = (r.lloji||'').split(',').map(t=>t.trim()).filter(Boolean);
+    const tipos = tipoArr.map(t=>`<span class="chip act-chip">${TIPO_LABELS[t]||t}</span>`).join('');
+    return `<div class="mcard" onclick="showD('${r.id}')">
+      <div class="mcard-top">
+        <div>
+          <div class="mcard-name">${r.emri||r.user_fullname||'—'}</div>
+          <div class="mcard-time">${timeStr}</div>
+        </div>
+        <span class="badge ${st.c}">${st.l}</span>
+      </div>
+      <div class="mcard-row">📋 <strong>${r.ticket||'—'}</strong>${r.klienti?' · '+r.klienti:''}</div>
+      <div class="mcard-row">📍 ${r.adresa||'—'}</div>
+      ${r.supervisor?`<div class="mcard-row">👤 Supervisor: <strong>${r.supervisor}</strong></div>`:''}
+      ${tipos?`<div class="mcard-chips">${tipos}</div>`:''}
+      ${r.arsye_pezullim?`<div style="margin-top:8px;padding:8px;background:#fffbeb;border-radius:6px;font-size:12px;color:#92400e">🚫 ${r.arsye_pezullim.substring(0,80)}${r.arsye_pezullim.length>80?'...':''}</div>`:''}
+      <button class="mcard-btn" onclick="event.stopPropagation();showD('${r.id}')">Shiko detajet →</button>
+    </div>`;
+  }).join('');
 }
 
 function renderT(data){
