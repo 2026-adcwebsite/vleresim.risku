@@ -320,13 +320,21 @@ async function doLogout(){await sb.auth.signOut();window.location.replace('https
 
 async function loadData(){
   document.getElementById('tbody').innerHTML='<tr><td colspan="7"><div class="loading-row"><div class="spin"></div><br>Duke ngarkuar...</div></td></tr>';
-  const {data:{session}}=await sb.auth.getSession();
-  const res=await fetch(`${SURL}/rest/v1/jha_submissions?select=*&order=created_at.desc&limit=500`,{
-    headers:{'apikey':SKEY,'Authorization':'Bearer '+session.access_token}
-  });
-  allData=await res.json();
-  if(!Array.isArray(allData))allData=[];
-  updateStats();filterT();
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session){
+      window.location.replace('https://2026-adcwebsite.github.io/vleresim.risku/login.html');
+      return;
+    }
+    const res=await fetch(`${SURL}/rest/v1/jha_submissions?select=*&order=created_at.desc&limit=500`,{
+      headers:{'apikey':SKEY,'Authorization':'Bearer '+session.access_token}
+    });
+    allData=await res.json();
+    if(!Array.isArray(allData))allData=[];
+    updateStats();filterT();
+  }catch(e){
+    document.getElementById('tbody').innerHTML='<tr><td colspan="7"><div class="empty">⚠️ Gabim: '+e.message+'</div></td></tr>';
+  }
 }
 
 function getSt(r){
