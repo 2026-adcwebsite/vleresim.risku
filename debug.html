@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JHA Debug</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{font-family:sans-serif;padding:20px;background:#f5f5f5}
+.box{background:#fff;border-radius:10px;padding:16px;margin-bottom:12px;border:1px solid #e0e0e0}
+.title{font-weight:700;margin-bottom:8px;font-size:14px}
+.log{font-size:12px;font-family:monospace;color:#333;word-break:break-all;line-height:1.6}
+.ok{color:#1D9E75;font-weight:700}
+.err{color:#e2001a;font-weight:700}
+.field{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:8px;box-sizing:border-box}
+.btn{width:100%;padding:12px;background:#e2001a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px}
+.btn2{background:#1D9E75}
+</style>
+</head>
+<body>
+
+<div class="box">
+  <div class="title">🔧 ADC JHA — Debug Page</div>
+  <div class="log" id="log">Duke nisur testet...</div>
+</div>
+
+<div class="box">
+  <div class="title">Test Login</div>
+  <input class="field" type="email" id="email" placeholder="Email" value="">
+  <input class="field" type="password" id="pass" placeholder="Fjalëkalimi">
+  <button class="btn" onclick="testLogin()">Test Login</button>
+  <button class="btn btn2" onclick="testSession()">Kontrollo Session</button>
+</div>
+
+<div class="box">
+  <div class="log" id="result">—</div>
+</div>
+
+<script>
+const {createClient} = supabase;
+const sb = createClient(
+  'https://klvxppajwtwxxeomvefe.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsdnhwcGFqd3R3eHhlb212ZWZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4OTM0NTgsImV4cCI6MjA5MzQ2OTQ1OH0.QApeuRya7HiOT494qljVIKTv7XX_HSeS61tAwijbOlk'
+);
+
+function log(msg, type=''){
+  const el = document.getElementById('log');
+  el.innerHTML += `<br><span class="${type}">${msg}</span>`;
+}
+
+function setResult(msg, type=''){
+  document.getElementById('result').innerHTML = `<span class="${type}">${msg}</span>`;
+}
+
+// Auto tests
+async function runTests(){
+  log('✓ Supabase u ngarkua', 'ok');
+  log('Browser: ' + navigator.userAgent.substring(0,80));
+  log('URL: ' + window.location.href);
+  
+  // Test network
+  try{
+    const res = await fetch('https://klvxppajwtwxxeomvefe.supabase.co/rest/v1/', {
+      headers: {'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsdnhwcGFqd3R3eHhlb212ZWZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4OTM0NTgsImV4cCI6MjA5MzQ2OTQ1OH0.QApeuRya7HiOT494qljVIKTv7XX_HSeS61tAwijbOlk'}
+    });
+    log('✓ Lidhja me Supabase OK (' + res.status + ')', 'ok');
+  }catch(e){
+    log('✗ Lidhja me Supabase DËSHTOI: ' + e.message, 'err');
+  }
+
+  // Test session
+  const {data:{session}} = await sb.auth.getSession();
+  if(session){
+    log('✓ Session aktiv: ' + session.user.email, 'ok');
+  } else {
+    log('— Asnjë session aktiv', '');
+  }
+
+  // Test localStorage
+  try{
+    localStorage.setItem('test','1');
+    localStorage.removeItem('test');
+    log('✓ localStorage OK', 'ok');
+  }catch(e){
+    log('✗ localStorage BLLOKUAR: ' + e.message, 'err');
+  }
+}
+
+async function testLogin(){
+  const email = document.getElementById('email').value.trim();
+  const pass = document.getElementById('pass').value;
+  if(!email||!pass){setResult('Plotëso email dhe fjalëkalimin!','err');return;}
+  
+  setResult('Duke u kyçur...','');
+  try{
+    const {data, error} = await sb.auth.signInWithPassword({email, password:pass});
+    if(error){
+      setResult('✗ GABIM: ' + error.message, 'err');
+    } else {
+      setResult('✓ LOGIN OK! User: ' + data.user.email + '<br>Session: ' + (data.session ? 'PO ✓' : 'JO ✗'), 'ok');
+      // Test profile fetch
+      const {data:prof, error:pe} = await sb.from('profiles').select('*').eq('id', data.user.id).single();
+      if(pe) setResult(document.getElementById('result').innerHTML + '<br>✗ Profile error: ' + pe.message, 'err');
+      else setResult(document.getElementById('result').innerHTML + '<br>✓ Profile: ' + prof.full_name + ' | Role: ' + prof.role, 'ok');
+    }
+  }catch(e){
+    setResult('✗ EXCEPTION: ' + e.message, 'err');
+  }
+}
+
+async function testSession(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(session){
+    setResult('✓ Session OK: ' + session.user.email, 'ok');
+  } else {
+    setResult('✗ Asnjë session! localStorage mund të jetë bllokuar.', 'err');
+  }
+}
+
+runTests();
+</script>
+</body>
+</html>
