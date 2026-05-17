@@ -546,7 +546,8 @@ function initSteps(){
 }
 
 // Auth
-sb.auth.getSession().then(async({data:{session}})=>{
+async function initApp(){
+  const {data:{session}} = await sb.auth.getSession();
   if(!session){window.location.href='/vleresim.risku/login.html';return;}
   cu=session.user;
   const {data:p}=await sb.from('profiles').select('*').eq('id',cu.id).single();
@@ -558,12 +559,21 @@ sb.auth.getSession().then(async({data:{session}})=>{
   document.getElementById('lscr').style.display='none';
   document.getElementById('mapp').style.display='block';
   document.getElementById('nav-bar').style.display='flex';
-  // Set date/time
   const now=new Date();
   document.getElementById('data').valueAsDate=now;
   document.getElementById('ora').value=now.toTimeString().substring(0,5);
   initSteps();initPPE();initSig();updateNav();
-});
+}
+// Retry session check for mobile browsers
+async function tryInit(attempt=0){
+  const {data:{session}} = await sb.auth.getSession();
+  if(!session && attempt<3){
+    setTimeout(()=>tryInit(attempt+1), 500);
+    return;
+  }
+  initApp();
+}
+tryInit();
 
 async function doLogout(){await sb.auth.signOut();window.location.href='/vleresim.risku/login.html';}
 

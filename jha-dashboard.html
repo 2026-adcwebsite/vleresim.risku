@@ -251,7 +251,8 @@ const ACTS={
 const TIPO_LABELS={instalim_ri:'Instalim i Ri',suport:'Suport',migrim:'Migrim',kulle:'Punime në Kullë'};
 
 // Auth
-sb.auth.getSession().then(async({data:{session}})=>{
+async function initDash(){
+  const {data:{session}} = await sb.auth.getSession();
   if(!session){window.location.href='/vleresim.risku/login.html';return;}
   const {data:p}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
   if(p?.role!=='supervisor'){window.location.href='/vleresim.risku/jha-form.html';return;}
@@ -259,7 +260,16 @@ sb.auth.getSession().then(async({data:{session}})=>{
   document.getElementById('lscr').style.display='none';
   document.getElementById('main').style.display='block';
   loadData();
-});
+}
+async function tryInitDash(attempt=0){
+  const {data:{session}} = await sb.auth.getSession();
+  if(!session && attempt<3){
+    setTimeout(()=>tryInitDash(attempt+1), 500);
+    return;
+  }
+  initDash();
+}
+tryInitDash();
 
 async function doLogout(){await sb.auth.signOut();window.location.href='/vleresim.risku/login.html';}
 

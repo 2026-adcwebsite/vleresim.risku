@@ -104,10 +104,11 @@ const sb = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsdnhwcGFqd3R3eHhlb212ZWZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4OTM0NTgsImV4cCI6MjA5MzQ2OTQ1OH0.QApeuRya7HiOT494qljVIKTv7XX_HSeS61tAwijbOlk'
 );
 
-// Check if already logged in
-sb.auth.getSession().then(({data:{session}})=>{
+// Check if already logged in - with mobile delay
+setTimeout(async()=>{
+  const {data:{session}} = await sb.auth.getSession();
   if(session) redirectUser(session.user);
-});
+}, 300);
 
 function switchTab(t){
   document.getElementById('tab-login').style.display = t==='login'?'block':'none';
@@ -134,14 +135,29 @@ async function doLogin(){
   err.classList.remove('show');
   if(!email||!pass){err.textContent='Plotëso të gjitha fushat.';err.classList.add('show');return;}
   btn.disabled=true;btn.textContent='Duke hyrë...';
-  const {data,error} = await sb.auth.signInWithPassword({email,password:pass});
-  if(error){
-    err.textContent = error.message.includes('Invalid')?'Email ose fjalëkalim i gabuar.':error.message;
+  try{
+    const {data,error} = await sb.auth.signInWithPassword({email,password:pass});
+    if(error){
+      err.textContent = error.message.includes('Invalid')?'Email ose fjalëkalim i gabuar.':error.message;
+      err.classList.add('show');
+      btn.disabled=false;btn.textContent='Hyr në Sistem';
+      return;
+    }
+    // Wait for session to persist on mobile
+    await new Promise(r=>setTimeout(r,800));
+    const {data:{session}} = await sb.auth.getSession();
+    if(!session){
+      err.textContent='Sesioni nuk u ruajt. Provo përsëri.';
+      err.classList.add('show');
+      btn.disabled=false;btn.textContent='Hyr në Sistem';
+      return;
+    }
+    redirectUser(data.user);
+  }catch(e){
+    err.textContent='Gabim: '+e.message;
     err.classList.add('show');
     btn.disabled=false;btn.textContent='Hyr në Sistem';
-    return;
   }
-  redirectUser(data.user);
 }
 
 async function doRegister(){
