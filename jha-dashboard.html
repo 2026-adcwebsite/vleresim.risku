@@ -131,6 +131,12 @@ tr:hover td{background:#fafafa;cursor:pointer}
   .pg{grid-template-columns:repeat(3,1fr)}
 }
 </style>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#e2001a">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="ADC JHA">
 </head>
 <body>
 
@@ -602,6 +608,13 @@ function exportCSV(){
 }
 
 setInterval(loadData,60000);
+</script>
+<script>
+if("serviceWorker" in navigator){
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>

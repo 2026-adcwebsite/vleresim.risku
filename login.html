@@ -35,6 +35,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .divider span{background:#fff;padding:0 10px;position:relative}
 .role-info{background:#f8f8f8;border-radius:8px;padding:12px;font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.5}
 </style>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#e2001a">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="ADC JHA">
 </head>
 <body>
 <div class="wrap">
@@ -162,6 +168,13 @@ async function doRegister(){
   }
   ok.textContent='✓ Llogaria u krijua! Duke të ridrejtuar...';ok.classList.add('show');
   setTimeout(()=>redirectUser(data.user),1500);
+}
+</script>
+<script>
+if("serviceWorker" in navigator){
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(()=>{});
+  });
 }
 </script>
 </body>
