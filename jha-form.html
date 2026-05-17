@@ -547,11 +547,11 @@ function initSteps(){
 
 // Auth
 sb.auth.getSession().then(async({data:{session}})=>{
-  if(!session){window.location.href='login.html';return;}
+  if(!session){window.location.href='/vleresim.risku/login.html';return;}
   cu=session.user;
   const {data:p}=await sb.from('profiles').select('*').eq('id',cu.id).single();
   prof=p;
-  if(p?.role==='supervisor'){window.location.href='jha-dashboard.html';return;}
+  if(p?.role==='supervisor'){window.location.href='/vleresim.risku/jha-dashboard.html';return;}
   const nm=p?.full_name||cu.email;
   document.getElementById('uname').textContent=nm;
   document.getElementById('disp-emri').textContent=nm;
@@ -565,7 +565,7 @@ sb.auth.getSession().then(async({data:{session}})=>{
   initSteps();initPPE();initSig();updateNav();
 });
 
-async function doLogout(){await sb.auth.signOut();window.location.href='login.html';}
+async function doLogout(){await sb.auth.signOut();window.location.href='/vleresim.risku/login.html';}
 
 // Tipo punës
 function toggleTipo(el,id){

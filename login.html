@@ -120,9 +120,9 @@ async function redirectUser(user){
   const {data} = await sb.from('profiles').select('role').eq('id',user.id).single();
   const role = data?.role || 'worker';
   if(role==='supervisor'){
-    window.location.href='jha-dashboard.html';
+    window.location.href='/vleresim.risku/jha-dashboard.html';
   } else {
-    window.location.href='jha-form.html';
+    window.location.href='/vleresim.risku/jha-form.html';
   }
 }
 
