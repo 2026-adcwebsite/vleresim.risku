@@ -253,9 +253,9 @@ const TIPO_LABELS={instalim_ri:'Instalim i Ri',suport:'Suport',migrim:'Migrim',k
 // Auth
 async function initDash(){
   const {data:{session}} = await sb.auth.getSession();
-  if(!session){window.location.href='/vleresim.risku/login.html';return;}
+  if(!session){window.location.replace('https://2026-adcwebsite.github.io/vleresim.risku/login.html');return;}
   const {data:p}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
-  if(p?.role!=='supervisor'){window.location.href='/vleresim.risku/jha-form.html';return;}
+  if(p?.role!=='supervisor'){window.location.replace('https://2026-adcwebsite.github.io/vleresim.risku/jha-form.html');return;}
   document.getElementById('ubox').textContent=p?.full_name||session.user.email;
   document.getElementById('lscr').style.display='none';
   document.getElementById('main').style.display='block';
@@ -271,7 +271,7 @@ async function tryInitDash(attempt=0){
 }
 tryInitDash();
 
-async function doLogout(){await sb.auth.signOut();window.location.href='/vleresim.risku/login.html';}
+async function doLogout(){await sb.auth.signOut();window.location.replace('https://2026-adcwebsite.github.io/vleresim.risku/login.html');}
 
 async function loadData(){
   document.getElementById('tbody').innerHTML='<tr><td colspan="7"><div class="loading-row"><div class="spin"></div><br>Duke ngarkuar...</div></td></tr>';

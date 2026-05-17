@@ -117,13 +117,16 @@ function switchTab(t){
 }
 
 async function redirectUser(user){
-  // Get profile role
-  const {data} = await sb.from('profiles').select('role').eq('id',user.id).single();
-  const role = data?.role || 'worker';
-  if(role==='supervisor'){
-    window.location.href='/vleresim.risku/jha-dashboard.html';
-  } else {
-    window.location.href='/vleresim.risku/jha-form.html';
+  try{
+    const {data} = await sb.from('profiles').select('role').eq('id',user.id).single();
+    const role = data?.role || 'worker';
+    const dest = role==='supervisor'
+      ? 'https://2026-adcwebsite.github.io/vleresim.risku/jha-dashboard.html'
+      : 'https://2026-adcwebsite.github.io/vleresim.risku/jha-form.html';
+    // Use full URL for mobile compatibility
+    window.location.replace(dest);
+  }catch(e){
+    window.location.replace('https://2026-adcwebsite.github.io/vleresim.risku/jha-form.html');
   }
 }
 
