@@ -385,7 +385,7 @@ function renderMobileCards(data){
     const timeStr = dt.toLocaleDateString('sq-AL',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+dt.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
     const tipoArr = (r.lloji||'').split(',').map(t=>t.trim()).filter(Boolean);
     const tipos = tipoArr.map(t=>`<span class="chip act-chip">${TIPO_LABELS[t]||t}</span>`).join('');
-    return `<div class="mcard" onclick="showD('${r.id}')">
+    return `<div class="mcard" data-id="${r.id}">
       <div class="mcard-top">
         <div>
           <div class="mcard-name">${r.emri||r.user_fullname||'—'}</div>
@@ -398,7 +398,7 @@ function renderMobileCards(data){
       ${r.supervisor?`<div class="mcard-row">👤 Supervisor: <strong>${r.supervisor}</strong></div>`:''}
       ${tipos?`<div class="mcard-chips">${tipos}</div>`:''}
       ${r.arsye_pezullim?`<div style="margin-top:8px;padding:8px;background:#fffbeb;border-radius:6px;font-size:12px;color:#92400e">🚫 ${r.arsye_pezullim.substring(0,80)}${r.arsye_pezullim.length>80?'...':''}</div>`:''}
-      <button class="mcard-btn" onclick="event.stopPropagation();showD('${r.id}')">Shiko detajet →</button>
+      <button class="mcard-btn">Shiko detajet →</button>
     </div>`;
   }).join('');
 }
@@ -698,6 +698,14 @@ function exportCSV(){
   a.download='JHA_Export_'+new Date().toISOString().split('T')[0]+'.csv';
   a.click();
 }
+
+// Event delegation for mobile cards
+document.addEventListener('click', function(e){
+  const card = e.target.closest('.mcard');
+  if(card && card.dataset.id){
+    showD(card.dataset.id);
+  }
+});
 
 setInterval(loadData,60000);
 </script>
