@@ -2,7 +2,7 @@
   "name": "ADC JHA — Vlerësimi i Riskut",
   "short_name": "ADC JHA",
   "description": "Sistemi i Vlerësimit të Riskut në Vendin e Punës",
-  "start_url": "/login.html",
+  "start_url": "/vleresim.risku/login.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#e2001a",
@@ -21,6 +21,10 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["business", "productivity"],
-  "lang": "sq"
+  "categories": [
+    "business",
+    "productivity"
+  ],
+  "lang": "sq",
+  "scope": "/vleresim.risku/"
 }

@@ -11,7 +11,7 @@ const ASSETS = [
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE).then(cache => {
-      return cache.addAll(['/login.html', '/jha-form.html', '/jha-dashboard.html']);
+      return cache.addAll(['/vleresim.risku/login.html', '/vleresim.risku/jha-form.html', '/vleresim.risku/jha-dashboard.html']);
     })
   );
   self.skipWaiting();
@@ -49,7 +49,7 @@ self.addEventListener('fetch', e => {
           if (cached) return cached;
           // If HTML page not found, show login
           if (e.request.destination === 'document') {
-            return caches.match('/login.html');
+            return caches.match('/vleresim.risku/login.html');
           }
         });
       })
