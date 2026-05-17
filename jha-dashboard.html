@@ -404,6 +404,7 @@ function renderMobileCards(data){
 }
 
 function renderT(data){
+  renderMobileCards(data);
   const tb=document.getElementById('tbody');
   if(!data.length){tb.innerHTML='<tr><td colspan="7"><div class="empty">📋 Nuk u gjetën forma.</div></td></tr>';return;}
   tb.innerHTML=data.map(r=>{
