@@ -50,9 +50,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 
   <div class="card">
-    <div class="tabs">
+    <div class="tabs" style="display:none">
       <button class="tab active" onclick="switchTab('login')">Hyrje</button>
-      <button class="tab" onclick="switchTab('register')">Regjistrim</button>
+      
     </div>
 
     <!-- LOGIN -->
@@ -69,32 +69,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button class="btn" id="btn-login" onclick="doLogin()">Hyr në Sistem</button>
     </div>
 
-    <!-- REGISTER -->
-    <div id="tab-register" style="display:none">
-      <div class="role-info">
-        ℹ️ Regjistrimi është vetëm për punonjës të rinj. Supervisor-ët regjistrohen nga administratori.
-      </div>
-      <div class="err" id="reg-err"></div>
-      <div class="ok" id="reg-ok"></div>
-      <div class="field">
-        <label>Emri i Plotë</label>
-        <input type="text" id="r-name" placeholder="Emri Mbiemri">
-      </div>
-      <div class="field">
-        <label>Email</label>
-        <input type="email" id="r-email" placeholder="emri@adcgroup.al">
-      </div>
-      <div class="field">
-        <label>Fjalëkalimi</label>
-        <input type="password" id="r-pass" placeholder="Minimum 8 karaktere">
-      </div>
-      <div class="field">
-        <label>Konfirmo Fjalëkalimin</label>
-        <input type="password" id="r-pass2" placeholder="Rifut fjalëkalimin" onkeydown="if(event.key==='Enter')doRegister()">
-      </div>
-      <button class="btn btn-green" id="btn-reg" onclick="doRegister()">Krijo Llogari</button>
     </div>
-  </div>
 </div>
 
 <script>
@@ -111,12 +86,6 @@ setTimeout(async()=>{
   if(session) redirectUser(session.user);
 }, 300);
 
-function switchTab(t){
-  document.getElementById('tab-login').style.display = t==='login'?'block':'none';
-  document.getElementById('tab-register').style.display = t==='register'?'block':'none';
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',(t==='login'&&i===0)||(t==='register'&&i===1)));
-}
-
 async function redirectUser(user){
   try{
     const {data} = await sb.from('profiles').select('role').eq('id',user.id).single();
@@ -124,7 +93,6 @@ async function redirectUser(user){
     const dest = role==='supervisor'
       ? 'https://2026-adcwebsite.github.io/vleresim.risku/jha-dashboard.html'
       : 'https://2026-adcwebsite.github.io/vleresim.risku/jha-form.html';
-    // Use full URL for mobile compatibility
     window.location.replace(dest);
   }catch(e){
     window.location.replace('https://2026-adcwebsite.github.io/vleresim.risku/jha-form.html');
@@ -164,31 +132,6 @@ async function doLogin(){
   }
 }
 
-async function doRegister(){
-  const name = document.getElementById('r-name').value.trim();
-  const email = document.getElementById('r-email').value.trim();
-  const pass = document.getElementById('r-pass').value;
-  const pass2 = document.getElementById('r-pass2').value;
-  const err = document.getElementById('reg-err');
-  const ok = document.getElementById('reg-ok');
-  const btn = document.getElementById('btn-reg');
-  err.classList.remove('show');ok.classList.remove('show');
-  if(!name||!email||!pass){err.textContent='Plotëso të gjitha fushat.';err.classList.add('show');return;}
-  if(pass.length<8){err.textContent='Fjalëkalimi duhet të ketë minimum 8 karaktere.';err.classList.add('show');return;}
-  if(pass!==pass2){err.textContent='Fjalëkalimet nuk përputhen.';err.classList.add('show');return;}
-  btn.disabled=true;btn.textContent='Duke krijuar...';
-  const {data,error} = await sb.auth.signUp({
-    email, password:pass,
-    options:{data:{full_name:name, role:'worker'}}
-  });
-  if(error){
-    err.textContent=error.message;err.classList.add('show');
-    btn.disabled=false;btn.textContent='Krijo Llogari';
-    return;
-  }
-  ok.textContent='✓ Llogaria u krijua! Duke të ridrejtuar...';ok.classList.add('show');
-  setTimeout(()=>redirectUser(data.user),1500);
-}
 </script>
 <script>
 if("serviceWorker" in navigator){

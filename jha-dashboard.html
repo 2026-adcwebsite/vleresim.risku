@@ -195,6 +195,7 @@ tr:hover td{background:#fafafa;cursor:pointer}
     <div class="ubox" id="ubox">—</div>
     <button class="btn btn-sec" onclick="loadData()">↻ Rifresko</button>
     <button class="btn btn-exp" onclick="exportCSV()">↓ CSV</button>
+    <button class="btn btn-sec" onclick="openAddUser()">+ Shto Punonjës</button>
     <button class="btn btn-sec" onclick="doLogout()">Dil</button>
   </div>
 </div>
@@ -245,6 +246,55 @@ tr:hover td{background:#fafafa;cursor:pointer}
     </table>
   </div>
   <div class="mobile-cards" id="mobile-cards" style="display:none"></div>
+</div>
+
+
+<!-- ADD USER MODAL -->
+<div class="modal-bg" id="add-user-modal" onclick="closeAddUser(event)">
+  <div class="modal" style="max-width:420px">
+    <div class="mh">
+      <div class="mt">➕ Shto Punonjës të Ri</div>
+      <button class="mc" onclick="closeAddUser()">×</button>
+    </div>
+    <div class="mb">
+      <div id="au-err" style="display:none;background:#fff0f0;border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;font-size:13px;color:#dc2626;margin-bottom:14px"></div>
+      <div id="au-ok" style="display:none;background:#f0faf5;border:1px solid #6ee7b7;border-radius:8px;padding:10px 14px;font-size:13px;color:#1D9E75;margin-bottom:14px"></div>
+      
+      <div class="ms">
+        <div class="ms-title"><span class="ms-icon">👤</span> Të Dhënat e Punonjësit</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px">Emri i Plotë</label>
+            <input type="text" id="au-name" placeholder="Emri Mbiemri" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none">
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px">Email</label>
+            <input type="email" id="au-email" placeholder="emri@adcgroup.al" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none">
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px">Fjalëkalimi</label>
+            <input type="password" id="au-pass" placeholder="Minimum 8 karaktere" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none">
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px">Roli</label>
+            <select id="au-role" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none;background:#fff;-webkit-appearance:none">
+              <option value="worker">👷 Punonjës (Worker)</option>
+              <option value="supervisor">👔 Supervisor</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div id="au-users-section" class="ms" style="margin-top:16px">
+        <div class="ms-title"><span class="ms-icon">👥</span> Punonjësit Aktualë</div>
+        <div id="au-users-list" style="font-size:13px;color:var(--muted)">Duke ngarkuar...</div>
+      </div>
+
+      <button onclick="doAddUser()" id="au-btn" style="width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px">
+        ✓ Krijo Llogarinë
+      </button>
+    </div>
+  </div>
 </div>
 
 </div><!-- /main -->
@@ -697,6 +747,123 @@ function exportCSV(){
   a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
   a.download='JHA_Export_'+new Date().toISOString().split('T')[0]+'.csv';
   a.click();
+}
+
+
+// ─── USER MANAGEMENT ───
+const SURL_ADMIN = 'https://klvxppajwtwxxeomvefe.supabase.co';
+
+function openAddUser(){
+  document.getElementById('add-user-modal').classList.add('open');
+  document.getElementById('au-err').style.display='none';
+  document.getElementById('au-ok').style.display='none';
+  document.getElementById('au-name').value='';
+  document.getElementById('au-email').value='';
+  document.getElementById('au-pass').value='';
+  document.getElementById('au-role').value='worker';
+  loadUsersList();
+}
+
+function closeAddUser(e){
+  if(!e || e.target.id==='add-user-modal'){
+    document.getElementById('add-user-modal').classList.remove('open');
+  }
+}
+
+async function loadUsersList(){
+  const list = document.getElementById('au-users-list');
+  try{
+    const {data:{session}} = await sb.auth.getSession();
+    const res = await fetch(`${SURL_ADMIN}/rest/v1/profiles?select=*&order=created_at.desc`,{
+      headers:{'apikey':SKEY,'Authorization':'Bearer '+session.access_token}
+    });
+    const users = await res.json();
+    if(!users.length){list.innerHTML='<i>Asnjë punonjës i regjistruar.</i>';return;}
+    list.innerHTML = users.map(u=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0">
+        <div>
+          <div style="font-weight:600;color:var(--text)">${u.full_name||'—'}</div>
+          <div style="font-size:11px;color:var(--muted)">${u.role==='supervisor'?'👔 Supervisor':'👷 Worker'}</div>
+        </div>
+        <button onclick="deleteUser('${u.id}')" style="padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;border:1px solid #fca5a5;background:#fff0f0;color:#dc2626;cursor:pointer">Fshi</button>
+      </div>
+    `).join('');
+  }catch(e){
+    list.innerHTML='<span style="color:red">Gabim gjatë ngarkimit.</span>';
+  }
+}
+
+async function doAddUser(){
+  const name = document.getElementById('au-name').value.trim();
+  const email = document.getElementById('au-email').value.trim();
+  const pass = document.getElementById('au-pass').value;
+  const role = document.getElementById('au-role').value;
+  const err = document.getElementById('au-err');
+  const ok = document.getElementById('au-ok');
+  const btn = document.getElementById('au-btn');
+  
+  err.style.display='none'; ok.style.display='none';
+  if(!name||!email||!pass){err.textContent='Plotëso të gjitha fushat!';err.style.display='block';return;}
+  if(pass.length<8){err.textContent='Fjalëkalimi duhet të ketë minimum 8 karaktere!';err.style.display='block';return;}
+  
+  btn.disabled=true; btn.textContent='Duke krijuar...';
+  
+  try{
+    // Sign up user
+    const {data, error} = await sb.auth.signUp({
+      email, password: pass,
+      options:{data:{full_name:name, role:role}}
+    });
+    
+    if(error){
+      err.textContent='Gabim: '+error.message;
+      err.style.display='block';
+      btn.disabled=false; btn.textContent='✓ Krijo Llogarinë';
+      return;
+    }
+    
+    // Insert profile manually if trigger didn't fire
+    if(data.user){
+      const {data:{session}} = await sb.auth.getSession();
+      await fetch(`${SURL_ADMIN}/rest/v1/profiles`,{
+        method:'POST',
+        headers:{
+          'apikey':SKEY,
+          'Authorization':'Bearer '+session.access_token,
+          'Content-Type':'application/json',
+          'Prefer':'resolution=merge-duplicates'
+        },
+        body: JSON.stringify({id:data.user.id, full_name:name, role:role})
+      });
+    }
+    
+    ok.textContent='✓ Llogaria u krijua me sukses! Email: '+email;
+    ok.style.display='block';
+    btn.disabled=false; btn.textContent='✓ Krijo Llogarinë';
+    document.getElementById('au-name').value='';
+    document.getElementById('au-email').value='';
+    document.getElementById('au-pass').value='';
+    loadUsersList();
+    
+  }catch(e){
+    err.textContent='Gabim: '+e.message;
+    err.style.display='block';
+    btn.disabled=false; btn.textContent='✓ Krijo Llogarinë';
+  }
+}
+
+async function deleteUser(userId){
+  if(!confirm('Je i sigurt që dëshiron të fshish këtë punonjës?')) return;
+  try{
+    const {data:{session}} = await sb.auth.getSession();
+    await fetch(`${SURL_ADMIN}/rest/v1/profiles?id=eq.${userId}`,{
+      method:'DELETE',
+      headers:{'apikey':SKEY,'Authorization':'Bearer '+session.access_token}
+    });
+    loadUsersList();
+  }catch(e){
+    alert('Gabim gjatë fshirjes: '+e.message);
+  }
 }
 
 // Event delegation for mobile cards
