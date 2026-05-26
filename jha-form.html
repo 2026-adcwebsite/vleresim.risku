@@ -766,9 +766,9 @@ function showBlockingModal(errors, warnings, onConfirm){
           style="flex:1;padding:11px;border-radius:8px;font-size:14px;font-weight:700;border:1.5px solid #e0e0e0;background:#fff;cursor:pointer;color:#333">
           ← Kthehu
         </button>
-        ${!hasErrors?`<button onclick="document.getElementById('block-modal').remove();${onConfirm}()" 
+        ${!hasErrors?`<button onclick="document.getElementById('block-modal').remove();doActualSubmit();" 
           style="flex:2;padding:11px;border-radius:8px;font-size:14px;font-weight:700;border:none;background:#1D9E75;color:#fff;cursor:pointer">
-          Vazhdo Njëgjithesellë →
+          Vazhdo Gjithsesi →
         </button>`:''}
       </div>
     </div>`;
@@ -779,9 +779,12 @@ function showBlockingModal(errors, warnings, onConfirm){
 async function submitForm(){
   // Check blocking conditions first
   const {errors, warnings} = checkBlocking();
-  if(errors.length > 0 || warnings.length > 0){
-    // Store reference to actual submit
-    window._doActualSubmit = doActualSubmit;
+  window._doActualSubmit = doActualSubmit;
+  if(errors.length > 0){
+    showBlockingModal(errors, warnings, '_doActualSubmit');
+    return;
+  }
+  if(warnings.length > 0){
     showBlockingModal(errors, warnings, '_doActualSubmit');
     return;
   }
