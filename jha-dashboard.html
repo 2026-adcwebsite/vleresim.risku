@@ -809,46 +809,73 @@ async function doAddUser(){
   btn.disabled=true; btn.textContent='Duke krijuar...';
   
   try{
-    // Sign up user
-    const {data, error} = await sb.auth.signUp({
-      email, password: pass,
-      options:{data:{full_name:name, role:role}}
+    // Save current supervisor session
+    const {data:{session:supSession}} = await sb.auth.getSession();
+    if(!supSession){err.textContent='Sesioni i supervisorit ka skaduar. Logohu përsëri.';err.style.display='block';btn.disabled=false;btn.textContent='✓ Krijo Llogarinë';return;}
+    
+    // Create user via Supabase Admin API (does NOT affect current session)
+    const createRes = await fetch(`${SURL_ADMIN}/auth/v1/admin/users`, {
+      method: 'POST',
+      headers: {
+        'apikey': SKEY,
+        'Authorization': 'Bearer ' + supSession.access_token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: email,
+        password: pass,
+        email_confirm: true,
+        user_metadata: {full_name: name, role: role}
+      })
     });
     
-    if(error){
-      err.textContent='Gabim: '+error.message;
+    const created = await createRes.json();
+    
+    if(!createRes.ok || created.error){
+      const msg = created.error?.message || created.msg || 'Gabim gjatë krijimit.';
+      err.textContent = 'Gabim: ' + msg;
       err.style.display='block';
       btn.disabled=false; btn.textContent='✓ Krijo Llogarinë';
       return;
     }
     
-    // Insert profile manually if trigger didn't fire
-    if(data.user){
-      const {data:{session}} = await sb.auth.getSession();
-      await fetch(`${SURL_ADMIN}/rest/v1/profiles`,{
-        method:'POST',
-        headers:{
-          'apikey':SKEY,
-          'Authorization':'Bearer '+session.access_token,
-          'Content-Type':'application/json',
-          'Prefer':'resolution=merge-duplicates'
+    // Insert/update profile
+    const userId = created.id || created.user?.id;
+    if(userId){
+      await fetch(`${SURL_ADMIN}/rest/v1/profiles`, {
+        method: 'POST',
+        headers: {
+          'apikey': SKEY,
+          'Authorization': 'Bearer ' + supSession.access_token,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates'
         },
-        body: JSON.stringify({id:data.user.id, full_name:name, role:role})
+        body: JSON.stringify({id: userId, full_name: name, role: role})
       });
     }
     
-    ok.textContent='✓ Llogaria u krijua me sukses! Email: '+email;
-    ok.style.display='block';
-    btn.disabled=false; btn.textContent='✓ Krijo Llogarinë';
-    document.getElementById('au-name').value='';
-    document.getElementById('au-email').value='';
-    document.getElementById('au-pass').value='';
+    // Verify supervisor session still intact
+    const {data:{session:checkSession}} = await sb.auth.getSession();
+    if(!checkSession || checkSession.user.email !== supSession.user.email){
+      // Restore supervisor session if lost
+      await sb.auth.setSession({
+        access_token: supSession.access_token,
+        refresh_token: supSession.refresh_token
+      });
+    }
+    
+    ok.textContent = '✓ Punonjësi "' + name + '" u shtua me sukses! (' + email + ')';
+    ok.style.display = 'block';
+    btn.disabled = false; btn.textContent = '✓ Krijo Llogarinë';
+    document.getElementById('au-name').value = '';
+    document.getElementById('au-email').value = '';
+    document.getElementById('au-pass').value = '';
     loadUsersList();
     
   }catch(e){
-    err.textContent='Gabim: '+e.message;
-    err.style.display='block';
-    btn.disabled=false; btn.textContent='✓ Krijo Llogarinë';
+    err.textContent = 'Gabim: ' + e.message;
+    err.style.display = 'block';
+    btn.disabled = false; btn.textContent = '✓ Krijo Llogarinë';
   }
 }
 

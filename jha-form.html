@@ -686,7 +686,109 @@ function nextPage(){
 }
 
 // Submit
+
+// ─── LOGJIKA E BLLOKIMIT ───
+const BLOCKING = [
+  'a1q2','a2q1','a2q2','a3q1','a3q2','a3q3',
+  'a4q1','a4q2','a5q1','a5q3','a6q2',
+  'a8q1','a8q2','a9q3','a9q4'
+];
+const WARNING = [
+  'a1q1','a2q3','a3q4','a3q5','a6q4','a7q2','a8q3'
+];
+// A10: Jo = OK (nuk pengon), Po = problem
+const A10_REVERSED = ['a10q1','a10q2'];
+
+function checkBlocking(){
+  const errors = [];
+  const warnings = [];
+
+  for(const [id, val] of Object.entries(chks)){
+    const key = id.toLowerCase();
+    
+    // A10 logic reversed - Po = problem
+    if(A10_REVERSED.includes(key)){
+      if(val === 'po'){
+        errors.push('Komunikim: Konflikte me klientin — pezulloni aktivitetin menjëherë!');
+      }
+      continue;
+    }
+    
+    // Blocking questions - Jo = cannot proceed
+    if(BLOCKING.includes(key) && val === 'jo'){
+      const actNum = key.match(/a(\d+)/)[1];
+      const qNum = key.match(/q(\d+)/)[1];
+      errors.push(`Aktiviteti ${actNum}, Pyetja ${qNum}: Kushti i sigurisë nuk është plotësuar!`);
+    }
+    
+    // Warning questions - Jo = alert but can proceed
+    if(WARNING.includes(key) && val === 'jo'){
+      const actNum = key.match(/a(\d+)/)[1];
+      const qNum = key.match(/q(\d+)/)[1];
+      warnings.push(`Aktiviteti ${actNum}, Pyetja ${qNum}: Vërejtje sigurie!`);
+    }
+  }
+  
+  return {errors, warnings};
+}
+
+function showBlockingModal(errors, warnings, onConfirm){
+  // Remove existing modal
+  const existing = document.getElementById('block-modal');
+  if(existing) existing.remove();
+
+  const hasErrors = errors.length > 0;
+  const modal = document.createElement('div');
+  modal.id = 'block-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px';
+  
+  const errHtml = errors.map(e => `<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid #fecaca"><span style="flex-shrink:0">🚫</span><span>${e}</span></div>`).join('');
+  const warnHtml = warnings.map(w => `<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid #fde68a"><span style="flex-shrink:0">⚠️</span><span>${w}</span></div>`).join('');
+  
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:420px;overflow:hidden">
+      <div style="padding:16px 20px;background:${hasErrors?'#e2001a':'#d97706'};color:#fff">
+        <div style="font-size:18px;font-weight:800">${hasErrors?'🚫 Puna Bllokohet':'⚠️ Vërejtje Sigurie'}</div>
+        <div style="font-size:13px;margin-top:4px;opacity:0.9">${hasErrors?'Kushtet e sigurisë nuk janë plotësuar':'Ka vërejtje — mund të vazhdosh me kujdes'}</div>
+      </div>
+      <div style="padding:16px 20px;max-height:300px;overflow-y:auto">
+        ${hasErrors?`<div style="margin-bottom:12px">
+          <div style="font-size:11px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Probleme Kritike — Duhet Rregulluar</div>
+          <div style="font-size:13px;color:#7f1d1d;line-height:1.5">${errHtml}</div>
+        </div>`:''}
+        ${warnHtml?`<div>
+          <div style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Vërejtje</div>
+          <div style="font-size:13px;color:#78350f;line-height:1.5">${warnHtml}</div>
+        </div>`:''}
+      </div>
+      <div style="padding:14px 20px;border-top:1px solid #f0f0f0;display:flex;gap:8px">
+        <button onclick="document.getElementById('block-modal').remove()" 
+          style="flex:1;padding:11px;border-radius:8px;font-size:14px;font-weight:700;border:1.5px solid #e0e0e0;background:#fff;cursor:pointer;color:#333">
+          ← Kthehu
+        </button>
+        ${!hasErrors?`<button onclick="document.getElementById('block-modal').remove();${onConfirm}()" 
+          style="flex:2;padding:11px;border-radius:8px;font-size:14px;font-weight:700;border:none;background:#1D9E75;color:#fff;cursor:pointer">
+          Vazhdo Njëgjithesellë →
+        </button>`:''}
+      </div>
+    </div>`;
+  
+  document.body.appendChild(modal);
+}
+
 async function submitForm(){
+  // Check blocking conditions first
+  const {errors, warnings} = checkBlocking();
+  if(errors.length > 0 || warnings.length > 0){
+    // Store reference to actual submit
+    window._doActualSubmit = doActualSubmit;
+    showBlockingModal(errors, warnings, '_doActualSubmit');
+    return;
+  }
+  doActualSubmit();
+}
+
+async function doActualSubmit(){
   const bn=document.getElementById('btn-next');bn.disabled=true;bn.textContent='Duke dërguar...';
   const pmiSelected=PPE_LIST.filter((_,i)=>ppeChked.includes(i)).map(p=>p.l);
   const {data:{session}}=await sb.auth.getSession();
