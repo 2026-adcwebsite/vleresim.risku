@@ -1,4 +1,4 @@
-const CACHE = 'jha-adc-v1';
+const CACHE = 'jha-adc-v3';
 const ASSETS = [
   '/login.html',
   '/jha-form.html',
