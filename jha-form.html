@@ -696,8 +696,6 @@ const BLOCKING = [
 const WARNING = [
   'a1q1','a2q3','a3q4','a3q5','a6q4','a7q2','a8q3'
 ];
-// A10: Jo = OK (nuk pengon), Po = problem
-const A10_REVERSED = ['a10q1','a10q2'];
 
 function checkBlocking(){
   const errors = [];
@@ -705,30 +703,28 @@ function checkBlocking(){
 
   for(const [id, val] of Object.entries(chks)){
     const key = id.toLowerCase();
-    
-    // A10 logic reversed - Po = problem
-    if(A10_REVERSED.includes(key)){
+
+    // A10 — Jo = OK, Po = konflikte = bllokon
+    if(key === 'a10q1' || key === 'a10q2'){
       if(val === 'po'){
-        errors.push('Komunikim: Konflikte me klientin — pezulloni aktivitetin menjëherë!');
+        errors.push('Komunikim: Konflikte me klientin — pezulloni aktivitetin dhe lajmeroni supervisorin!');
       }
       continue;
     }
-    
-    // Blocking questions - Jo = cannot proceed
+
+    // Bllokuese — Jo nuk lejon vazhdimin
     if(BLOCKING.includes(key) && val === 'jo'){
-      const actNum = key.match(/a(\d+)/)[1];
-      const qNum = key.match(/q(\d+)/)[1];
-      errors.push(`Aktiviteti ${actNum}, Pyetja ${qNum}: Kushti i sigurisë nuk është plotësuar!`);
+      const m = key.match(/a(\d+)q(\d+)/);
+      if(m) errors.push('Aktiviteti ' + m[1] + ' - Pyetja ' + m[2] + ': Kushti i sigurise nuk eshte plotesuar!');
     }
-    
-    // Warning questions - Jo = alert but can proceed
+
+    // Paralajmeruese — Jo lejon vazhdimin me alert
     if(WARNING.includes(key) && val === 'jo'){
-      const actNum = key.match(/a(\d+)/)[1];
-      const qNum = key.match(/q(\d+)/)[1];
-      warnings.push(`Aktiviteti ${actNum}, Pyetja ${qNum}: Vërejtje sigurie!`);
+      const m = key.match(/a(\d+)q(\d+)/);
+      if(m) warnings.push('Aktiviteti ' + m[1] + ' - Pyetja ' + m[2] + ': Verejte sigurie!');
     }
   }
-  
+
   return {errors, warnings};
 }
 
