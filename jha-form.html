@@ -437,8 +437,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="act-body">
         <div class="act-risks"><span class="risk-chip">⚠️ Konflikte me klientin</span></div>
         <div class="chk-list">
-          <div class="chk-item" id="a10q1"><div class="chk-q">1. A keni vështirësi të komunikoni me klientin (tregon agresivitet, reagon ashpër, tregon shenja nervozizmi)?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a10q1','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a10q1','jo',this)">✗ Jo</button></div></div>
-          <div class="chk-item" id="a10q2"><div class="chk-q">2. A ndiheni të ofenduar/kërcënuar kur operoni në brendësi të objektit, banesës, ambientit të klientit?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a10q2','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a10q2','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a10q1"><div class="chk-q">1. Komunikimi me klientin është në rregull — nuk ka agresivitet, nervozizëm apo sjellje të papërshtatshme?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a10q1','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a10q1','jo',this)">✗ Jo</button></div></div>
+          <div class="chk-item" id="a10q2"><div class="chk-q">2. Ndiheni të sigurt dhe të respektuar kur operoni në brendësi të objektit / banesës / ambientit të klientit?</div><div class="chk-btns"><button class="chk-btn" onclick="sChk('a10q2','po',this)">✓ Po</button><button class="chk-btn" onclick="sChk('a10q2','jo',this)">✗ Jo</button></div></div>
         </div>
         <div style="margin-top:10px;padding:10px;background:#fff8e1;border-radius:8px;border:1px solid var(--amber);font-size:12px;color:#92400e;line-height:1.5">
           ⚠️ Në rast se ndiheni të ofenduar/kërcënuar apo klienti kryen veprime që tentojnë dhunë ndaj jush, <strong>pezulloni menjëherë aktivitetin dhe largohuni</strong>, duke vënë në dijeni supervisorin.
@@ -704,10 +704,10 @@ function checkBlocking(){
   for(const [id, val] of Object.entries(chks)){
     const key = id.toLowerCase();
 
-    // A10 — Jo = OK, Po = konflikte = bllokon
+    // A10 — Jo = problem (komunikim i keq), Po = OK (komunikim normal)
     if(key === 'a10q1' || key === 'a10q2'){
-      if(val === 'po'){
-        errors.push('Komunikim: Konflikte me klientin — pezulloni aktivitetin dhe lajmeroni supervisorin!');
+      if(val === 'jo'){
+        errors.push('Komunikim: Situatë e vështirë me klientin — pezulloni aktivitetin menjëherë dhe lajmëroni supervisorin!');
       }
       continue;
     }
