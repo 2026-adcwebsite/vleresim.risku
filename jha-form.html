@@ -556,7 +556,7 @@ function initSteps(){
 // Auth
 async function initApp(){
   const {data:{session}} = await sb.auth.getSession();
-  if(!session){window.location.replace('https://2026-adcwebsite.github.io/vleresim.risku/login.html');return;}
+  if(!session){window.location.replace('https://2026-adcwebsite.github.io/vleresim.risku/login.html');continue;}
   cu=session.user;
   const {data:p}=await sb.from('profiles').select('*').eq('id',cu.id).single();
   prof=p;
